@@ -1,6 +1,6 @@
 # Data
 /data/
-*.pth
+*.pt
 # Mac OS-specific storage files
 .DS_Store
 
