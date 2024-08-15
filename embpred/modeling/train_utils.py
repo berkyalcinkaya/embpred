@@ -10,6 +10,7 @@ import json
 import os
 import nni
 from embpred.config import MODELS_DIR
+from embpred.modeling.models import FirstNet
 import torch.nn.functional as F
 
 
