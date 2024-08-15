@@ -1,12 +1,10 @@
 from itertools import count
-from pathlib import Path
-import typer
 from loguru import logger
 from tqdm import tqdm
 import numpy as np
 #import pandas as pd
 from glob import glob
-import json
+import os
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -15,7 +13,7 @@ from torchsampler import ImbalancedDatasetSampler
 from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR
 from embpred.modeling.models import FirstNet, count_parameters
 from embpred.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
-                            get_filename_no_ext, stratified_kfold_split, load_mappings)
+                            get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
 from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
 
 
@@ -27,6 +25,7 @@ if __name__ == "__main__":
     KFOLDS = 2
     EPOCHS = 50
     LR = 0.001
+    WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 32
 
     mappings = load_mappings()
@@ -41,11 +40,14 @@ if __name__ == "__main__":
 
                 additional_ids = ["sampled"] if do_sampling else ["unsampled"]
 
-                model_dir = configure_model_dir(model_name, dataset, mappings[dataset], 
+                mapping = mappings[dataset]
+                class_names_by_label = get_class_names_by_label(mapping)
+                logger.info(class_names_by_label)
+                model_dir = configure_model_dir(model_name, dataset, mapping, 
                                                 additional_ids=additional_ids)
                 logger.info(f"MODEL DIR: {model_dir}")
                 
-                accs, aucs, macros = [], [], []
+                accs, aucs, macros,  = [], [], []
                 k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
                 for idx, fold in enumerate(k_fold_splits):
                     logger.info(f"Fold {idx+1}/{KFOLDS}")
@@ -70,12 +72,16 @@ if __name__ == "__main__":
                     
                     logger.info(f"Loaded model to {device}")
                     
-                    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=0.0001)
+                    optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
                     criterion = nn.CrossEntropyLoss()
+                    
+                    model_save_path = os.path.join(log_dir, "model.pth")
+                    logger.info(f"BEST WEIGHTS: {model_save_path}")
             
                     val_micro, val_auc, val_macro = train_and_evaluate(model, train_loader, val_loader, 
                                                                        optimizer, device, criterion, False,5,
-                                                                       EPOCHS, writer)
+                                                                       EPOCHS, writer, best_model_path=model_save_path, 
+                                                                       class_names=class_names_by_label)
                     val_micro, val_auc, val_macro, _ = evaluate(model, device, val_loader)
                     logger.info(f'(Initial Performance Last Epoch) | test_micro={(val_micro * 100):.2f}, '
                                     f'test_macro={(val_macro * 100):.2f}, test_auc={(val_auc * 100):.2f}')

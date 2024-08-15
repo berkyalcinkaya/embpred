@@ -1,12 +1,3 @@
-import torch
-from torch.utils.data import Dataset
-from torchvision import datasets
-from torchvision.transforms import ToTensor
-import matplotlib.pyplot as plt
-import os
-import pandas as pd
-from torchvision.io import read_image
-plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision.transforms import v2, ToTensor, Lambda
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split
@@ -14,6 +5,19 @@ import numpy as np
 from PIL import Image
 import json
 from embpred.config import RAW_DATA_DIR
+import torch
+from torch.utils.data import Dataset
+import matplotlib.pyplot as plt
+import os
+from torchvision.io import read_image
+plt.rcParams["savefig.bbox"] = 'tight'
+
+def get_class_names_by_label(mapping_dict)->dict:
+    label_ints = mapping_dict.values()
+    class_name_dict = {}
+    for label_int in label_ints:
+        class_name_dict[label_int] = "-".join([key for key, value in mapping_dict.items() if value == label_int])
+    return class_name_dict
 
 def load_mappings(pth = "EmbStages/dataset1/mappings.json"):
     mapping_path =  RAW_DATA_DIR / pth

@@ -12,6 +12,18 @@ import nni
 from embpred.config import MODELS_DIR
 import torch.nn.functional as F
 
+
+def save_best_model(state, filename):
+    torch.save(state, filename)
+    
+def write_aucs_by_class(aucs, epoch, writer, mode="Train", mappings=None):
+    for i, auc in enumerate(aucs):
+        if mappings:
+            class_name = mappings[i]
+        else:
+            class_name = f"class{i}"
+        writer.add_scalar(f"Metrics/{mode}_AUC_{class_name}", auc, epoch)
+        
 def configure_model_dir(model_name, dataset_name, mapping, additional_ids = None):
     """
     Configures a directory for the model based on its class name and dataset name.
@@ -59,7 +71,8 @@ def get_device():
     return device
 
 
-def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, test_interval, epochs, writer: SummaryWriter):
+def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, test_interval, 
+                       epochs, writer: SummaryWriter, best_model_path=None, class_names=None):
     """
     Trains the model and evaluates its performance at specified intervals.
 
@@ -74,12 +87,20 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     - test_interval: The interval (in epochs) at which to evaluate the model on the test set.
     - epochs: Total number of training epochs.
     - writer: SummaryWriter object for logging to TensorBoard.
+    - best_model_path: if specified, save model checkpoint when new auc best is acheived
+    - class_names: a dict or list of strings. A dictionary should specify the numeric label as
+                            the key and name as the value. A list should be of length num_classes and
+                            contain the class name by index. Optional, if provided, used to write aucs
+                            to tensorboard
 
     Returns:
-    - Tuple containing mean accuracy, AUC, and macro F1-score over the test intervals.
+    - Tuple containing mean accuracy, AUC, macro F1-score, and loss over the test intervals.
     """
     model.train()
     accs, aucs, macros, losses = [], [], [], []
+    
+    best_auc = 0
+    
     for i in range(epochs):
         loss_all = 0
         for data in train_loader:
@@ -96,7 +117,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         epoch_loss = loss_all / len(train_loader.dataset)
         writer.add_scalar('Loss/train', epoch_loss, i)
 
-        train_micro, train_auc, train_macro, _ = evaluate(model, device, train_loader)
+        train_micro, train_aucs, train_macro, _ = evaluate(model, device, train_loader)
+        train_auc = np.mean(train_aucs)
         logger.info(f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}, '
                      f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
                      f'train_auc={(train_auc * 100):.2f}')
@@ -104,9 +126,23 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         writer.add_scalar('Metrics/Train_Micro_F1', train_micro, i)
         writer.add_scalar('Metrics/Train_Macro_F1', train_macro, i)
         writer.add_scalar('Metrics/Train_AUC', train_auc, i)
+        write_aucs_by_class(train_aucs, i, writer, mode="Train", mappings=class_names)
 
         if (i + 1) % test_interval == 0:
-            test_micro, test_auc, test_macro, test_loss = evaluate(model, device, test_loader, loss=loss)
+            test_micro, test_aucs, test_macro, test_loss = evaluate(model, device, test_loader, loss=loss)
+            
+            test_auc = np.mean(test_aucs)
+            if test_auc > best_auc:
+                best_auc = test_auc
+                
+                if best_model_path is not None:
+                    save_best_model({
+                                    'epoch': i,
+                                    'model_state_dict': model.state_dict(),
+                                    'optimizer_state_dict': optimizer.state_dict(),
+                                    'best_val_auc': best_auc,
+                                }, best_model_path)
+                
             accs.append(test_micro)
             aucs.append(test_auc)
             macros.append(test_macro)
@@ -117,6 +153,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
             writer.add_scalar('Metrics/Test_Micro_F1', test_micro, i)
             writer.add_scalar('Metrics/Test_Macro_F1', test_macro, i)
             writer.add_scalar('Metrics/Test_AUC', test_auc, i)
+            write_aucs_by_class(test_aucs, i, writer, mode="Test", mappings=class_names)
 
         if use_nni:
             nni.report_intermediate_result(train_auc)
@@ -124,10 +161,6 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     accs, aucs, macros, losses = np.sort(np.array(accs)), np.sort(np.array(aucs)), np.sort(np.array(macros)), np.sort(np.array(losses))
     return accs.mean(), aucs.mean(), macros.mean(), losses.mean()
 
-import torch.nn.functional as F
-from sklearn import metrics
-import torch
-import numpy as np
 
 @torch.no_grad()
 def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils.data.DataLoader] = None) -> tuple:
@@ -142,14 +175,13 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     - test_loader: Optional DataLoader for an additional test set. If provided, both train and test metrics will be returned.
 
     Returns:
-    - If test_loader is None, returns a tuple containing (train_micro, train_auc, train_macro, avg_loss).
-    - If test_loader is provided, returns a tuple containing (train_micro, train_auc, train_macro, test_micro, test_auc, test_macro, avg_loss).
+    - If test_loader is None, returns a tuple containing (train_micro, train_aucs, train_macro, avg_loss).
+    - If test_loader is provided, returns a tuple containing (train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, avg_loss).
     """
     model.eval()
     preds, trues, preds_prob = [], [], []
 
     loss_all = 0
-    total_samples = 0
 
     for data in loader:
         inputs, labels = data[0].to(device), data[1].to(device)
@@ -157,8 +189,7 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
         
         if loss is not None:
             loss_value = loss(c, labels)
-            loss_all += loss_value.item() * inputs.size(0)  # Accumulate total loss weighted by batch size
-            total_samples += inputs.size(0)
+            loss_all += loss_value.item()
 
         # Apply softmax to get probabilities for each class
         probabilities = F.softmax(c, dim=1).detach().cpu().numpy()
@@ -180,12 +211,12 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     preds = np.array(preds)
 
     if loss is not None:
-        epoch_loss = loss_all / total_samples  # Calculate the average loss over all samples
+        epoch_loss = loss_all / len(loader.dataset)# Calculate the average loss over all samples
     else:
         epoch_loss = None
 
     # Calculate ROC AUC for multiclass with One-vs-Rest (OvR) strategy
-    train_auc = metrics.roc_auc_score(trues, preds_prob, multi_class='ovr', average='weighted')
+    train_aucs = metrics.roc_auc_score(trues, preds_prob, multi_class='ovr', average=None)
 
     # Calculate F1-scores
     train_micro = metrics.f1_score(trues, preds, average='micro')
@@ -193,6 +224,6 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
 
     if test_loader is not None:
         test_micro, test_auc, test_macro, test_loss = evaluate(model, device, test_loader, loss)
-        return train_micro, train_auc, train_macro, test_micro, test_auc, test_macro, epoch_loss
+        return train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, epoch_loss
     else:
-        return train_micro, train_auc, train_macro, epoch_loss
+        return train_micro, train_aucs, train_macro, epoch_loss
