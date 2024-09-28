@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
 import os
 from torchvision.io import read_image
+import skimage 
 plt.rcParams["savefig.bbox"] = 'tight'
 
 def get_class_names_by_label(mapping_dict)->dict:
@@ -85,33 +86,57 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
 
 # rotation
 transforms = v2.Compose([
-        v2.Resize((800, 800), interpolation=Image.BICUBIC),
       v2.RandomHorizontalFlip(p=0.5),
       v2.RandomVerticalFlip(p=0.5),
       v2.RandomRotation(degrees=(0, 180))
 ])
 
+
 class CustomImageDataset(Dataset):
-    def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True):
+    def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True):
         self.img_paths = img_paths
         self.img_labels = img_labels
         self.num_classes = len(np.unique(self.img_labels))
         self.transform = img_transform
         self.encode_labels = encode_labels
+        
+        self.num_channels=num_channels
+        self.channel_idx = channel_idx
+        self.do_normalize = do_normalize
+        
+        # Define the label transformation function once
+        if self.encode_labels:
+            self.label_transform = Lambda(lambda y: 
+                torch.zeros(self.num_classes, dtype=torch.float).scatter_(0, torch.tensor(y), value=1))
+        else:
+            self.label_transform = None
 
     def __len__(self):
         return len(self.img_labels)
-
+    
+    def load_image(self, im_file):
+        if self.num_channels not in [1,3]:
+            im_npy = skimage.io.imread(im_file).transpose(2,0,1)
+            im = torch.from_numpy(im_npy)
+        else:
+            im = read_image(im_file)
+        
+        if self.channel_idx is not None:
+            im = im[self.channel_idx, :, :]
+        
+        if self.do_normalize:
+            im/=255
+        
+        return im
+        
     def __getitem__(self, idx):
         img_path = self.img_paths[idx]
         label = self.img_labels[idx]
-        image = read_image(img_path)/255
+        image = self.load_image(img_path)
         if self.transform:
             image = self.transform(image)
         if self.encode_labels:
-            transform = Lambda(lambda y: 
-                               torch.zeros(self.num_classes, dtype=torch.float).scatter_(0, torch.tensor(y), value=1))
-            label = transform(label)
+            label = self.label_transform(label)
         
         return image, label
     
