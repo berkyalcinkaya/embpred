@@ -4,7 +4,7 @@ import glob
 
 
 mapping = {
-        "t1": 0,
+        "tEmpty":0,
         "t2": 1,
         "t3": 2,
         "t4": 3,

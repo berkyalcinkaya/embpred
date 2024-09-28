@@ -2,13 +2,13 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from loguru import logger
-from embpred.modeling.models import FirstNet
+from embpred.modeling.models import FirstNet2D
 
 # Load environment variables from .env file if it exists
 load_dotenv()
 
 MODELS = {
-    "FirstNet": FirstNet
+    "FirstNet2D": FirstNet2D
 }
 
 # Paths
@@ -25,6 +25,8 @@ MODELS_DIR = PROJ_ROOT / "models"
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
+
+RCNN_PATH = MODELS_DIR / "FasterRCNN.pt"
 
 default_transforms = []
 

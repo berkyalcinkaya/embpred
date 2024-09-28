@@ -6,15 +6,42 @@ from glob import glob
 import os
 from typing import List, Union
 from embpred.config import PROCESSED_DATA_DIR, RAW_DATA_DIR, MODELS_DIR, INTERIM_DATA_DIR
-from embpred.features import ExtractEmbFrame
+from embpred.features import ExtractEmbFrame, extract_emb_frame_2d, load_faster_RCNN_model_device
 import csv
 import json
 import torch
 import cv2 
-from skimage.io import imsave
-import os
+from skimage.io import imsave, imread
+import numpy as np
+import shutil
 from PIL import Image
-from torchvision import transforms
+
+def focus_and_pad(image, target_size, model, device):
+    for i in [0,1]:
+        assert(image.shape[i] <= target_size[i])
+    image_focused = extract_emb_frame_2d(image, model, device)
+    return get_padding(image_focused, target_size)
+
+def get_padding(image, target_size):
+    # Assuming image is a NumPy array with shape (height, width, channels) or (height, width)
+    image_height, image_width = image.shape[:2]
+
+    # Calculate padding values
+    pad_left = int((target_size[0] - image_width) / 2)
+    pad_top = int((target_size[1] - image_height) / 2)
+    pad_right = int((target_size[0] - image_width) / 2 + (target_size[0] - image_width) % 2)
+    pad_bottom = int((target_size[1] - image_height) / 2 + (target_size[1] - image_height) % 2)
+
+    # Pad the image using np.pad
+    if len(image.shape) == 3:  # If the image has channels (e.g., RGB)
+        padding = ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0))
+    else:  # If the image is grayscale
+        padding = ((pad_top, pad_bottom), (pad_left, pad_right))
+
+    padded_image = np.pad(image, padding, mode='constant', constant_values=0)  # You can change the padding mode and value
+
+    return padded_image
+
 
 def pad_images_in_directory(input_dir, output_dir=None, target_size=(800, 800), replace_original=False):
     """
@@ -35,13 +62,6 @@ def pad_images_in_directory(input_dir, output_dir=None, target_size=(800, 800), 
         os.makedirs(output_dir, exist_ok=True)
     
     # Define the padding transform
-    def get_padding(image, target_size):
-        return transforms.Pad(padding=(
-            int((target_size[0] - image.width) / 2), 
-            int((target_size[1] - image.height) / 2), 
-            int((target_size[0] - image.width) / 2 + (target_size[0] - image.width) % 2), 
-            int((target_size[1] - image.height) / 2 + (target_size[1] - image.height) % 2)
-        ))
 
     # Iterate over all files in the input directory
     for filename in os.listdir(input_dir):
@@ -64,15 +84,14 @@ def crop_bottom_pixels(image, num_pix = 25):
     return image[:(-1*num_pix), :]
 
 def extract_embryos(paths, labels, dataset_name = "EmbStages1_Focused"):
+    new_paths = []
     new_dir = INTERIM_DATA_DIR / dataset_name
 
     if not os.path.exists(new_dir):
         os.mkdir(new_dir)
 
-
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     model = torch.load(MODELS_DIR / 'FasterRCNN.pt')
-
     for path, label in tqdm(zip(paths, labels)):
         Img = cv2.imread(path)
         emb_frame, _, _ = ExtractEmbFrame(Img[:,:,0] ,Img[:,:,1], Img[:,:,2], model , device)
@@ -80,6 +99,7 @@ def extract_embryos(paths, labels, dataset_name = "EmbStages1_Focused"):
         new_name = new_dir / f"{label}_{name}"
         #print(emb_frame.shape, new_name)
         imsave(new_name, emb_frame)
+        new_paths.append(path)
 
 
 def get_all_image_paths_from_raws(loc = RAW_DATA_DIR / "EmbStages/dataset1", im_type = "jpeg"):
@@ -120,10 +140,129 @@ def make_dataset(mappings: List[dict], paths, labels, loc = PROCESSED_DATA_DIR):
             for row in zip(paths, labels_to_numeric(labels, mappings[mapping_name])):
                 csv_out.writerow(row)
 
+
+def load_depths(emb_dir, depths):
+    data = {}
+    print(emb_dir)
+    for depth in depths:
+        data[depth] = sorted(glob(os.path.join(emb_dir, depth, "*.jpeg")), key = lambda x: int(x.split(".")[-2].split("RUN")[-1]))
+    return data
+
+def tp_str_search(tp, tp_dict, num_tp):
+    '''
+    Tp=timepoints
+    '''
+    if str(tp) in tp_dict:
+        return tp_dict[str(tp)]
+    
+    left_label = tp_str_search_left(tp, tp_dict)
+    right_label = tp_str_search_right(tp, tp_dict, num_tp)
+    
+    infer_label = None
+    if left_label is not None and right_label is not None:
+        if left_label == right_label:
+            infer_label = right_label
+        else:
+            print("CRITICAL: could not infer label of missing timepoints")     
+            return None
+    elif left_label is not None or right_label is not None:
+        infer_label = left_label if left_label is not None else right_label
+    else:
+        print("CRITICAL: could not infer label of missing timepoints")
+        return None
+    
+    if infer_label is not None:
+        tp_dict[str(tp)] = infer_label
+        return infer_label
+    return None
+
+        
+def tp_str_search_left(tp, tp_dict):
+    if str(tp) in tp_dict:
+        return tp_dict[str(tp)]
+    if tp<0:
+        return None
+    return tp_str_search_left(tp-1, tp_dict)
+
+def tp_str_search_right(tp, tp_dict, num_tp):
+    if str(tp) in tp_dict:
+        return tp_dict[str(tp)]
+    if tp >= num_tp:
+        return None
+    return tp_str_search_right(tp+1, tp_dict, num_tp)
+    
+def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None):
+    '''
+    Code used to generate the datasets for the data labeled by carson. Creates a new directory
+    in data/interim that has subdirectories corresponding to all the timepoint labels
+    '''
+    TARGET_SIZE = (800, 800)
+    output_dir = INTERIM_DATA_DIR / output_dir
+    directory = RAW_DATA_DIR / directory
+    label_json = RAW_DATA_DIR / label_json
+    
+    depths = ["F-45", "F-30", "F-15", "F0", "F15", "F30", "F45"]
+    depths.reverse()
+    LABEL_KEY = "timepoint_labels"
+    
+    if not os.path.exists(output_dir):
+        #shutil.rmtree(output_dir)
+        os.mkdir(output_dir)#shutil.rmtree(output_dir)
+    
+    with open(label_json, "r") as file:
+        label_json = json.load(file)
+    embs = [path for path in os.listdir(directory) if os.path.isdir(directory / path)]
+    
+    potential_labels = np.unique(list(label_json[embs[0]][LABEL_KEY].values()) + 
+                                 list(label_json[embs[2]][LABEL_KEY].values()) + 
+                                 list(label_json[embs[3]][LABEL_KEY].values())) # randomly sample three embryos to get all timepoints
+    for potential_label in potential_labels:
+        label_dir = os.path.join(output_dir, potential_label)
+        if not os.path.exists(label_dir):
+            os.mkdir(label_dir)
+    
+    model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
+    
+    for emb_dir in tqdm(embs):
+        depth_ims = load_depths(directory / emb_dir, depths)
+        
+        labels_by_subj = label_json[emb_dir][LABEL_KEY]
+        
+        num_tp = len(depth_ims[depths[0]])
+        for tp in tqdm(range(num_tp)):
+            
+            # for missing timepoints, interpolate if consistent before and after
+            # timepoint before differs from timepoint after, skip
+            tp_label = tp_str_search(tp, labels_by_subj, num_tp)
+            if tp_label is None:
+                continue
+            
+            if classes_to_use is not None and tp_label not in classes_to_use:
+                continue
+            
+            fname_im_path = depth_ims[depths[-1]][tp]
+            im_file = output_dir / tp_label / os.path.basename(fname_im_path).replace(".jpeg", ".tif")
+            if os.path.exists(im_file):
+                (f"Skipping {im_file}")
+                continue
+                #print("Found existing")
+                #im_file = str(im_file).replace(".tif", "-1.tif")
+
+            # save images as 7 x TARGET_SIZE images stacked along dim 0
+            ims = []
+            for depth in depths:
+                fname = depth_ims[depth][tp]
+                ims.append(imread(fname))
+            ims = [focus_and_pad(im, TARGET_SIZE, model, device) for im in ims]
+            ims = np.stack(ims, axis=0)
+            assert(ims.shape == (7,800,800))
+            imsave(im_file, ims)
+
+            
 if __name__ == "__main__":
-    mappings = RAW_DATA_DIR / "EmbStages/dataset1/mappings.json"
-    assert (os.path.exists(mappings))
-    with open(mappings, 'r') as json_file:
-        mappings_dict = json.load(json_file)
-    paths, labels = get_all_images_interim()
-    make_dataset(mappings_dict, paths, labels)
+    #process_by_focal_depth("Dataset2", "CarsonData1", "output2.json", use_GPU=True, classes_to_use=["tPNf", "t7", "t5", "t6", "t3"])
+    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "CarsonData1", im_type="tif")
+    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+        mappings = json.load(f)
+    
+    make_dataset(mappings, paths, labels)

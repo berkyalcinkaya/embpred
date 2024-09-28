@@ -1,15 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from torchvision import models
+from collections import OrderedDict
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
 
-class FirstNet(nn.Module):
+class FirstNet2D(nn.Module):
 
     def __init__(self, num_classes=4):
-        super(FirstNet, self).__init__()
+        super(FirstNet2D, self).__init__()
         # 1 input image channel, 6 output channels, 5x5 square convolution
         # kernel
         self.conv1 = nn.Conv2d(1, 6, 5)
@@ -46,3 +47,112 @@ class FirstNet(nn.Module):
         # outputs a (N, num_classes) Tensor
         output = self.fc3(f6)
         return output
+
+
+class SimpleNet3D(nn.Module):
+    def __init__(self, num_classes=10):  # You can specify the number of classes here
+        super(SimpleNet3D, self).__init__()
+        # Define the first convolutional layer: 3 input channels, 6 output channels, 5x5 kernel
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        # Define the second convolutional layer: 6 input channels, 16 output channels, 5x5 kernel
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        # Define a max pooling layer with 2x2 kernel
+        self.pool = nn.MaxPool2d(2, 2)
+        # Fully connected layers
+        self.fc1 = nn.Linear(16 * 5 * 5, 120)  # Input features match the output from the conv layers
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, num_classes)
+
+    def forward(self, x):
+        # Apply the first convolution, ReLU, and max pooling
+        x = self.pool(F.relu(self.conv1(x)))
+        # Apply the second convolution, ReLU, and max pooling
+        x = self.pool(F.relu(self.conv2(x)))
+        # Flatten the tensor for the fully connected layers
+        x = torch.flatten(x, 1)  # Flatten all dimensions except batch
+        # Apply fully connected layers with ReLU activations
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        # Output layer (no activation function here because we'll use CrossEntropyLoss, which includes softmax)
+        x = self.fc3(x)
+        return x
+    
+
+class CustomResNet18(nn.Module):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons):
+        super(CustomResNet18, self).__init__()
+        # Load the pretrained ResNet-18 model
+        self.resnet = models.resnet18(pretrained=True)
+        
+        # Freeze all the ResNet-18 layers
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+        
+        # Remove the original fully connected layer
+        num_ftrs = self.resnet.fc.in_features  # In ResNet-18, this is 512
+        self.resnet.fc = nn.Identity()  # Replace the final fc layer with an identity layer
+
+        # If a single integer is provided, apply it to all dense layers
+        if isinstance(dense_neurons, int):
+            dense_neurons = [dense_neurons] * num_dense_layers
+
+        # Define the custom dense layers dynamically based on the specified number of layers
+        layers = []
+        input_size = num_ftrs
+        for i, neurons in enumerate(dense_neurons):
+            layers.append(('fc{}'.format(i + 1), nn.Linear(input_size, neurons)))
+            layers.append(('relu{}'.format(i + 1), nn.ReLU(inplace=True)))
+            layers.append(('dropout{}'.format(i + 1), nn.Dropout(0.5)))
+            input_size = neurons
+        layers.append(('fc_final', nn.Linear(input_size, num_classes)))  # Final output layer, no softmax
+        
+        self.classifier = nn.Sequential(*[nn.Sequential(layer) for layer in layers])
+
+    def forward(self, x):
+        # Forward pass through ResNet-18 backbone (without the final FC layer)
+        x = self.resnet(x)
+        x = torch.flatten(x, 1)  # Flatten to a vector
+        
+        # Forward pass through custom classifier
+        x = self.classifier(x)
+        return x  # Return logits, no softmax
+
+
+class CustomResNet50(nn.Module):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons):
+        super(CustomResNet50, self).__init__()
+        # Load the pretrained ResNet-50 model
+        self.resnet = models.resnet50(pretrained=True)
+        
+        # Freeze all the ResNet-50 layers
+        for param in self.resnet.parameters():
+            param.requires_grad = False
+        
+        # Remove the original fully connected layer
+        num_ftrs = self.resnet.fc.in_features  # In ResNet-50, this is 2048
+        self.resnet.fc = nn.Identity()  # Replace the final fc layer with an identity layer
+
+        # If a single integer is provided, apply it to all dense layers
+        if isinstance(dense_neurons, int):
+            dense_neurons = [dense_neurons] * num_dense_layers
+
+        # Define the custom dense layers dynamically based on the specified number of layers
+        layers = []
+        input_size = num_ftrs
+        for i, neurons in enumerate(dense_neurons):
+            layers.append(('fc{}'.format(i + 1), nn.Linear(input_size, neurons)))
+            layers.append(('relu{}'.format(i + 1), nn.ReLU(inplace=True)))
+            layers.append(('dropout{}'.format(i + 1), nn.Dropout(0.5)))
+            input_size = neurons
+        layers.append(('fc_final', nn.Linear(input_size, num_classes)))  # Final output layer, no softmax
+        
+        self.classifier = nn.Sequential(*[nn.Sequential(layer) for layer in layers])
+
+    def forward(self, x):
+        # Forward pass through ResNet-50 backbone (without the final FC layer)
+        x = self.resnet(x)
+        x = torch.flatten(x, 1)  # Flatten to a vector
+        
+        # Forward pass through custom classifier
+        x = self.classifier(x)
+        return x  # Return logits, no softmax

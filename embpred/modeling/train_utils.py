@@ -10,7 +10,6 @@ import json
 import os
 import nni
 from embpred.config import MODELS_DIR
-from embpred.modeling.models import FirstNet
 import torch.nn.functional as F
 
 
@@ -73,7 +72,8 @@ def get_device():
 
 
 def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, test_interval, 
-                       epochs, writer: SummaryWriter, best_model_path=None, class_names=None):
+                       epochs, writer: SummaryWriter, best_model_path=None, class_names=None, do_early_stop=False,
+                       early_stop_epochs=None):
     """
     Trains the model and evaluates its performance at specified intervals.
 
@@ -93,6 +93,9 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
                             the key and name as the value. A list should be of length num_classes and
                             contain the class name by index. Optional, if provided, used to write aucs
                             to tensorboard
+    - do_early_stop (bool, default False): whether to implement an early stopping callback. If true, user should specify early_stop_epochs
+    - early_stop_epochs (Optional int): maximum number of epochs since model improvement in terms of test_auc before training is cut short. 
+                                        Only used if do_early_stop is set to True
 
     Returns:
     - Tuple containing mean accuracy, AUC, macro F1-score, and loss over the test intervals.
@@ -100,9 +103,14 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     model.train()
     accs, aucs, macros, losses = [], [], [], []
     
-    best_auc = 0
     
+    best_auc = 0
+    num_epochs_since_improvement = 0
     for i in range(epochs):
+        
+        if do_early_stop and num_epochs_since_improvement >= early_stop_epochs:
+            break
+        
         loss_all = 0
         for data in train_loader:
             inputs, labels = data[0].to(device), data[1].to(device)
@@ -118,7 +126,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         epoch_loss = loss_all / len(train_loader.dataset)
         writer.add_scalar('Loss/train', epoch_loss, i)
 
-        train_micro, train_aucs, train_macro, _ = evaluate(model, device, train_loader)
+        train_micro, train_aucs, train_macro, _, _ = evaluate(model, device, train_loader, get_conf_mat=False)
         train_auc = np.mean(train_aucs)
         logger.info(f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}, '
                      f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
@@ -130,11 +138,12 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         write_aucs_by_class(train_aucs, i, writer, mode="Train", mappings=class_names)
 
         if (i + 1) % test_interval == 0:
-            test_micro, test_aucs, test_macro, test_loss = evaluate(model, device, test_loader, loss=loss)
+            test_micro, test_aucs, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss=loss, get_conf_mat=False)
             
             test_auc = np.mean(test_aucs)
             if test_auc > best_auc:
                 best_auc = test_auc
+                num_epochs_since_improvement = 0
                 
                 if best_model_path is not None:
                     save_best_model({
@@ -143,6 +152,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
                                     'optimizer_state_dict': optimizer.state_dict(),
                                     'best_val_auc': best_auc,
                                 }, best_model_path)
+            else:
+                num_epochs_since_improvement +=test_interval
                 
             accs.append(test_micro)
             aucs.append(test_auc)
@@ -164,7 +175,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
 
 
 @torch.no_grad()
-def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils.data.DataLoader] = None) -> tuple:
+def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils.data.DataLoader] = None, get_conf_mat:Optional[bool]=True) -> tuple:
     """
     Evaluates the model on the provided data loader.
 
@@ -174,13 +185,17 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     - loader: DataLoader for the dataset to evaluate.
     - loss: criterion to calculate average loss function, if provided
     - test_loader: Optional DataLoader for an additional test set. If provided, both train and test metrics will be returned.
+    - get_conf_mat: boolean flag that specifies whether or not a confusion matrix should be return. Default, True (confusion matrix returned)
 
     Returns:
-    - If test_loader is None, returns a tuple containing (train_micro, train_aucs, train_macro, avg_loss).
-    - If test_loader is provided, returns a tuple containing (train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, avg_loss).
+    - If test_loader is None, returns a tuple containing (train_micro, train_aucs, train_macro, avg_loss, conf_mat).
+    - If test_loader is provided, returns a tuple containing (train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, avg_loss, conf_mat).
+    - If get_conf_mat is True, the tuple will contain a final entry of an np.ndarray of shape (num_classes x num_classes), contianing the confusion matrix. 
+        Otherwise, conf_mat is None
     """
     model.eval()
     preds, trues, preds_prob = [], [], []
+    conf_mat = None
 
     loss_all = 0
 
@@ -215,6 +230,10 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
         epoch_loss = loss_all / len(loader.dataset)# Calculate the average loss over all samples
     else:
         epoch_loss = None
+    
+    if get_conf_mat:
+        logger.info("getting conf mat")
+        conf_mat = metrics.confusion_matrix(trues, preds)
 
     # Calculate ROC AUC for multiclass with One-vs-Rest (OvR) strategy
     train_aucs = metrics.roc_auc_score(trues, preds_prob, multi_class='ovr', average=None)
@@ -224,7 +243,7 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     train_macro = metrics.f1_score(trues, preds, average='macro')
 
     if test_loader is not None:
-        test_micro, test_auc, test_macro, test_loss = evaluate(model, device, test_loader, loss)
-        return train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, epoch_loss
+        test_micro, test_auc, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss)
+        return train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, epoch_loss, conf_mat
     else:
-        return train_micro, train_aucs, train_macro, epoch_loss
+        return train_micro, train_aucs, train_macro, epoch_loss, conf_mat
