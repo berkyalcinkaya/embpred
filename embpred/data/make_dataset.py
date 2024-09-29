@@ -299,9 +299,9 @@ if __name__ == "__main__":
     paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "CarsonData1", im_type="tif")
     
     # paths and labels are the paths to the images and their corresponding labels, respectively
-    paths, labels = equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=3600)
+    paths, labels = equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=1000)
     
     with open(RAW_DATA_DIR / "mappings.json", "r") as f:
         mappings = json.load(f)
     
-    make_dataset(mappings, paths, labels, dataset_additional_text="undersampled")
+    make_dataset(mappings, paths, labels, dataset_additional_text="undersampled-2")

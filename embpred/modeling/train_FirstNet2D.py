@@ -30,21 +30,21 @@ model_mappings =  {
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("SimpleNet3D", SimpleNet3D, {}),
         ("CustomResNet18-1layer", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         ("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
-        ("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
+        ("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("SimpleNet3D", SimpleNet3D, {})
     ]
 
     KFOLDS = 4
     EPOCHS = 30
     LR = 0.001
     WEIGHT_DECAY = 0.0001
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = glob(str(PROCESSED_DATA_DIR / "*.csv"))
+    datasets = glob(str(PROCESSED_DATA_DIR / "*undersampled-2.csv"))
     for do_sampling in [False, True]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
