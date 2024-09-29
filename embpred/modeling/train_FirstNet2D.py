@@ -42,7 +42,7 @@ if __name__ == "__main__":
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 32
 
-    mappings = load_mappings()
+    mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "*.csv"))
     for do_sampling in [False, True]:
