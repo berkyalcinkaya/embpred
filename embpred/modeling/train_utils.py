@@ -24,7 +24,7 @@ def write_aucs_by_class(aucs, epoch, writer, mode="Train", mappings=None):
             class_name = f"class{i}"
         writer.add_scalar(f"Metrics/{mode}_AUC_{class_name}", auc, epoch)
         
-def configure_model_dir(model_name, dataset_name, mapping, additional_ids = None):
+def configure_model_dir(model_name, dataset_name, mapping, architecture=None, additional_ids = None):
     """
     Configures a directory for the model based on its class name and dataset name.
     
@@ -32,6 +32,7 @@ def configure_model_dir(model_name, dataset_name, mapping, additional_ids = None
     - model_name: The name of the model being trained.
     - dataset_name: The name of the dataset being used for training.
     - mapping: A dictionary containing mappings that need to be saved.
+    - architecture: a dictionary containing the architecture of the model
     - additional_ids: a list of additional info that will form subdirectories
 
     Returns:
@@ -52,8 +53,14 @@ def configure_model_dir(model_name, dataset_name, mapping, additional_ids = None
     mapping_file_path = os.path.join(new_model_dir, 'mapping.json')
     with open(mapping_file_path, 'w') as json_file:
         json.dump(mapping, json_file, indent=4)
+    
+    # if architecture exists, save it to a json file
+    if architecture:
+        arch_file_path = os.path.join(new_model_dir, 'architecture.json')
+        with open(arch_file_path, 'w') as json_file:
+            json.dump(architecture, json_file, indent=4)
+            
     return new_model_dir
-
 
 def get_device():
     """

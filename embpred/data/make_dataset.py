@@ -15,6 +15,9 @@ from skimage.io import imsave, imread
 import numpy as np
 import shutil
 from PIL import Image
+import numpy as np
+from collections import Counter
+from sklearn.utils import resample
 
 def focus_and_pad(image, target_size, model, device):
     for i in [0,1]:
@@ -132,9 +135,10 @@ def get_all_images_interim(dataset = "EmbStages1_Focused", ext = "jpeg"):
 def labels_to_numeric(labels, dataset_mapping):
     return [dataset_mapping[label] for label in labels]
 
-def make_dataset(mappings: List[dict], paths, labels, loc = PROCESSED_DATA_DIR):
+def make_dataset(mappings: List[dict], paths, labels, loc = PROCESSED_DATA_DIR, dataset_additional_text=None):
     for mapping_name in tqdm(mappings):
-        with open(loc / f"{mapping_name}.csv", "w") as out:
+        dataset_name =  f"{mapping_name}.csv" if dataset_additional_text is None else f"{mapping_name}_{dataset_additional_text}.csv"
+        with open(loc / dataset_name, "w") as out:
             csv_out=csv.writer(out)
             csv_out.writerow(["path", "label"])
             for row in zip(paths, labels_to_numeric(labels, mappings[mapping_name])):
@@ -258,11 +262,46 @@ def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, clas
             assert(ims.shape == (7,800,800))
             imsave(im_file, ims)
 
+
+def equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=None):
+    '''
+    Randomly samples max_num_per_class images from each class if there are more than max_num_per_class images in that class. Otherwise, 
+    all images are kept. If max_num_per_class is None, it is set to the median number of images per class. 
+    '''
+    # Calculate the class distribution
+    class_counts = Counter(labels)
+    
+    # If max_num_per_class is not provided, set it to the median number of images per class
+    if max_num_per_class is None:
+        max_num_per_class = int(np.median(list(class_counts.values())))
+    
+    # Separate paths and labels by class
+    class_to_paths = {label: [] for label in class_counts}
+    for path, label in zip(paths, labels):
+        class_to_paths[label].append(path)
+    
+    # Under-sample classes
+    balanced_paths = []
+    balanced_labels = []
+    for label, paths in class_to_paths.items():
+        if len(paths) > max_num_per_class:
+            sampled_paths = resample(paths, replace=False, n_samples=max_num_per_class, random_state=42)
+        else:
+            sampled_paths = paths
+        balanced_paths.extend(sampled_paths)
+        balanced_labels.extend([label] * len(sampled_paths))
+    
+    return balanced_paths, balanced_labels
+
             
 if __name__ == "__main__":
     #process_by_focal_depth("Dataset2", "CarsonData1", "output2.json", use_GPU=True, classes_to_use=["tPNf", "t7", "t5", "t6", "t3"])
     paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "CarsonData1", im_type="tif")
+    
+    # paths and labels are the paths to the images and their corresponding labels, respectively
+    paths, labels = equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=3600)
+    
     with open(RAW_DATA_DIR / "mappings.json", "r") as f:
         mappings = json.load(f)
     
-    make_dataset(mappings, paths, labels)
+    make_dataset(mappings, paths, labels, dataset_additional_text="undersampled")

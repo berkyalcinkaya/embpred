@@ -1,4 +1,5 @@
 from itertools import count
+from platform import architecture
 from loguru import logger
 from tqdm import tqdm
 import numpy as np
@@ -25,14 +26,17 @@ model_mappings =  {
     "CustomResNet50": CustomResNet50 
 }
 
-def build_model(model_name, num_classes, params):
-    model_class = model_mappings[model_name]
-    return FirstNet2D(num_classes=num_classes)
-
 if __name__ == "__main__":
-    MODELS = ["FirstNet2D"]
+    # Define the models to train with 
+    MODELS = [
+        ("SimpleNet3D", SimpleNet3D, {}),
+        ("CustomResNet18-1layer", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64})
+        ("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
+    ]
+
     KFOLDS = 4
-    EPOCHS = 100
+    EPOCHS = 30
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 32
@@ -41,7 +45,7 @@ if __name__ == "__main__":
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "*.csv"))
     for do_sampling in [False, True]:
-        for model_name in MODELS:
+        for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
                 dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
@@ -52,7 +56,7 @@ if __name__ == "__main__":
                 mapping = mappings[dataset]
                 class_names_by_label = get_class_names_by_label(mapping)
                 logger.info(class_names_by_label)
-                model_dir = configure_model_dir(model_name, dataset, mapping, 
+                model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params,
                                                 additional_ids=additional_ids)
                 logger.info(f"MODEL DIR: {model_dir}")
                 
@@ -74,7 +78,7 @@ if __name__ == "__main__":
                     train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler, shuffle=do_shuffle, num_workers=4)
                     val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, num_workers=4)
 
-                    model = build_model(model_name, num_classes=train_data.get_num_classes())
+                    model = model_class(num_classes=train_data.get_num_classes(), **architecture_params)
                     param_count = count_parameters(model)
                     logger.info(f"{str(model)}")
                     logger.info(f"Model parameters: {param_count}")

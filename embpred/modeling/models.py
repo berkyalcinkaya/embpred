@@ -82,7 +82,7 @@ class CustomResNet18(nn.Module):
     def __init__(self, num_classes, num_dense_layers, dense_neurons):
         super(CustomResNet18, self).__init__()
         # Load the pretrained ResNet-18 model
-        self.resnet = models.resnet18(pretrained=True)
+        self.resnet = models.resnet18(pretrained=True, num_classes=num_classes)
         
         # Freeze all the ResNet-18 layers
         for param in self.resnet.parameters():
@@ -122,7 +122,7 @@ class CustomResNet50(nn.Module):
     def __init__(self, num_classes, num_dense_layers, dense_neurons):
         super(CustomResNet50, self).__init__()
         # Load the pretrained ResNet-50 model
-        self.resnet = models.resnet50(pretrained=True)
+        self.resnet = models.resnet50(pretrained=True, num_classes=num_classes)
         
         # Freeze all the ResNet-50 layers
         for param in self.resnet.parameters():
