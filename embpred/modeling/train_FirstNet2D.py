@@ -19,7 +19,7 @@ from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluat
 from embpred.modeling.utils import report_kfolds_results
 import csv
 
-MAPPING_PATH = RAW_DATA_DIR / "mapping.json"
+MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
