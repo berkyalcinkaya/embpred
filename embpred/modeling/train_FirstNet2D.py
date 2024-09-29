@@ -37,7 +37,7 @@ if __name__ == "__main__":
     ]
 
     KFOLDS = 4
-    EPOCHS = 30
+    EPOCHS = 50
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
                 additional_ids = ["sampled"] if do_sampling else ["unsampled"]
 
-                mapping = mappings[dataset]
+                mapping = mappings[dataset.split("_")[0]]
                 class_names_by_label = get_class_names_by_label(mapping)
                 logger.info(class_names_by_label)
                 model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params,
