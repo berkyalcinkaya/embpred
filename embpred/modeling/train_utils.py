@@ -59,7 +59,7 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
         arch_file_path = os.path.join(new_model_dir, 'architecture.json')
         with open(arch_file_path, 'w') as json_file:
             json.dump(architecture, json_file, indent=4)
-            
+
     return new_model_dir
 
 def get_device():
@@ -110,6 +110,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     model.train()
     accs, aucs, macros, losses = [], [], [], []
     
+    logger.info("Starting training")
     
     best_auc = 0
     num_epochs_since_improvement = 0
