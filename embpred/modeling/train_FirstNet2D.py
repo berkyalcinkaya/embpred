@@ -45,7 +45,7 @@ if __name__ == "__main__":
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "*undersampled-2.csv"))
-    for do_sampling in [False, True]:
+    for do_sampling in [False]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
