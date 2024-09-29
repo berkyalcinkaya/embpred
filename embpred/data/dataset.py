@@ -131,6 +131,7 @@ class CustomImageDataset(Dataset):
         if self.do_normalize:
             im = im.float() / 255
         
+        print(im.shape)
         return im
         
     def __getitem__(self, idx):
