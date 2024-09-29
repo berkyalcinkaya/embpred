@@ -95,6 +95,10 @@ transforms = v2.Compose([
 class CustomImageDataset(Dataset):
     def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True):
         self.img_paths = img_paths
+        
+        # determine image type from the first image in img_paths and save this as an attribute
+        self.img_type = self.img_paths[0].split(".")[-1]
+
         self.img_labels = img_labels
         self.num_classes = len(np.unique(self.img_labels))
         self.transform = img_transform

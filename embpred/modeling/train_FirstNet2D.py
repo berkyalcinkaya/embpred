@@ -71,8 +71,10 @@ if __name__ == "__main__":
                     writer = SummaryWriter(log_dir=log_dir)
                     train_ims, train_labels, val_ims, val_labels = fold
 
-                    train_data = CustomImageDataset(train_ims, train_labels, img_transform=transforms)
-                    val_data = CustomImageDataset(val_ims, val_labels, img_transform=transforms)
+                    train_data = CustomImageDataset(train_ims, train_labels, img_transform=transforms, num_channels=7, 
+                                                    channel_idx=[2,3,4])
+                    val_data = CustomImageDataset(val_ims, val_labels, img_transform=transforms, num_channels=7, 
+                                                    channel_idx=[2,3,4])
 
                     sampler, do_shuffle = (ImbalancedDatasetSampler(train_data), False) if do_sampling else (None, True)
 
