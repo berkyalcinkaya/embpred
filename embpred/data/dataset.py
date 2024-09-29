@@ -120,7 +120,9 @@ class CustomImageDataset(Dataset):
     
     def load_image(self, im_file):
         if self.num_channels not in [1,3]:
-            im_npy = skimage.io.imread(im_file).transpose(2,0,1)
+            im_npy = skimage.io.imread(im_file)
+            print(im_npy.shape)
+            im_npy = im_npy.transpose(2,0,1)
             print(im_npy.shape, im_npy.dtype, im_npy.max())
             im = torch.from_numpy(im_npy)
         else:
@@ -130,7 +132,7 @@ class CustomImageDataset(Dataset):
             im = im[self.channel_idx, :, :]
         
         if self.do_normalize:
-            im/=255
+            im = im.float() / 255
         
         return im
         
