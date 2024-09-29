@@ -11,6 +11,7 @@ import os
 import nni
 from embpred.config import MODELS_DIR
 import torch.nn.functional as F
+from tqdm import tqdm
 
 
 def save_best_model(state, filename):
@@ -120,7 +121,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
             break
         
         loss_all = 0
-        for data in train_loader:
+        for data in tqdm(train_loader):
             inputs, labels = data[0].to(device), data[1].to(device)
             optimizer.zero_grad()
             out = model(inputs)
