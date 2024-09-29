@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
-from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR
+from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50
 from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
@@ -19,6 +19,7 @@ from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluat
 from embpred.modeling.utils import report_kfolds_results
 import csv
 
+MAPPING_PATH = RAW_DATA_DIR / "mapping.json"
 
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
