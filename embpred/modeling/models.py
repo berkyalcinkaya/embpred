@@ -79,11 +79,15 @@ class SimpleNet3D(nn.Module):
         return x
     
 
+import torch
+import torch.nn as nn
+import torchvision.models as models
+
 class CustomResNet18(nn.Module):
     def __init__(self, num_classes, num_dense_layers, dense_neurons):
         super(CustomResNet18, self).__init__()
         # Load the pretrained ResNet-18 model
-        self.resnet = models.resnet18(pretrained=True) #, num_classes=num_classes)
+        self.resnet = models.resnet18(pretrained=True)
         
         # Freeze all the ResNet-18 layers
         for param in self.resnet.parameters():
@@ -101,22 +105,26 @@ class CustomResNet18(nn.Module):
         layers = []
         input_size = num_ftrs
         for i, neurons in enumerate(dense_neurons):
-            layers.append(('fc{}'.format(i + 1), nn.Linear(input_size, neurons)))
-            layers.append(('relu{}'.format(i + 1), nn.ReLU(inplace=True)))
-            layers.append(('dropout{}'.format(i + 1), nn.Dropout(0.5)))
+            layers.append(nn.Linear(input_size, neurons))  # Fully connected layer
+            layers.append(nn.ReLU(inplace=True))          # ReLU activation
+            layers.append(nn.Dropout(0.5))                # Dropout
             input_size = neurons
-        layers.append(('fc_final', nn.Linear(input_size, num_classes)))  # Final output layer, no softmax
         
-        self.classifier = nn.Sequential(*[nn.Sequential(layer) for layer in layers])
+        # Final output layer
+        layers.append(nn.Linear(input_size, num_classes))  # Final output layer, no softmax
+        
+        # Store all layers in nn.Sequential
+        self.classifier = nn.Sequential(*layers)
 
     def forward(self, x):
-        # Forward pass through ResNet-18 backbone (without the final FC layer)
+        # Forward pass through the ResNet backbone
         x = self.resnet(x)
-        x = torch.flatten(x, 1)  # Flatten to a vector
         
-        # Forward pass through custom classifier
+        # Forward pass through the custom classifier layers
         x = self.classifier(x)
-        return x  # Return logits, no softmax
+        
+        return x
+
 
 
 class CustomResNet50(nn.Module):
