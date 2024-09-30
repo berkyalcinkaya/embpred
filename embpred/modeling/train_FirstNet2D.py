@@ -30,7 +30,7 @@ model_mappings =  {
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("CustomResNet18-1layer", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         ("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
         ("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
         ("SimpleNet3D", SimpleNet3D, {})
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "*undersampled-2.csv"))
+    
     for do_sampling in [False]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
@@ -61,6 +62,8 @@ if __name__ == "__main__":
                                                 additional_ids=additional_ids)
                 logger.info(f"MODEL DIR: {model_dir}")
                 
+
+                # train model over k-folds, record performance
                 accs, aucs, macros, losses = [], [], [], []
                 conf_mats = np.zeros((num_classes, num_classes))
                 k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
@@ -96,7 +99,7 @@ if __name__ == "__main__":
                     logger.info(f"BEST WEIGHTS: {model_save_path}")
             
                     val_micro, val_auc, val_macro, val_losses = train_and_evaluate(model, train_loader, val_loader, 
-                                                                       optimizer, device, criterion, False, 3, 10,
+                                                                       optimizer, device, criterion, False, 5, 10,
                                                                        EPOCHS, writer, best_model_path=model_save_path, 
                                                                        class_names=class_names_by_label, early_stop_epochs=20, 
                                                                        do_early_stop=True)
