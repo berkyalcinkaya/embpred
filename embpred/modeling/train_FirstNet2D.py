@@ -37,7 +37,7 @@ if __name__ == "__main__":
     ]
 
     KFOLDS = 4
-    EPOCHS = 10
+    EPOCHS = 2
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
@@ -99,7 +99,7 @@ if __name__ == "__main__":
                     logger.info(f"BEST WEIGHTS: {model_save_path}")
             
                     val_micro, val_auc, val_macro, val_losses = train_and_evaluate(model, train_loader, val_loader, 
-                                                                       optimizer, device, criterion, False, 5, 10,
+                                                                       optimizer, device, criterion, False, 1, 1,
                                                                        EPOCHS, writer, best_model_path=model_save_path, 
                                                                        class_names=class_names_by_label, early_stop_epochs=20, 
                                                                        do_early_stop=True)
