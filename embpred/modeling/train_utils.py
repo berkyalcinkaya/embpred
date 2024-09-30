@@ -79,7 +79,7 @@ def get_device():
     return device
 
 
-def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, test_interval, 
+def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, train_test_interval, test_interval, 
                        epochs, writer: SummaryWriter, best_model_path=None, class_names=None, do_early_stop=False,
                        early_stop_epochs=None):
     """
@@ -93,6 +93,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     - device: The device on which to perform computations (CPU/GPU).
     - loss: The loss function to be used.
     - use_nni: Boolean indicating whether to report intermediate results to NNI.
+    - train_test_interval: The interval (in epochs) at which to evaluate the model on the training set
     - test_interval: The interval (in epochs) at which to evaluate the model on the test set.
     - epochs: Total number of training epochs.
     - writer: SummaryWriter object for logging to TensorBoard.
@@ -133,19 +134,26 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
             loss_all += loss_value.item()
         
         epoch_loss = loss_all / len(train_loader.dataset)
-        writer.add_scalar('Loss/train', epoch_loss, i)
-
-        train_micro, train_aucs, train_macro, _, _ = evaluate(model, device, train_loader, get_conf_mat=False)
-        train_auc = np.mean(train_aucs)
-        logger.info(f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}, '
-                     f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
-                     f'train_auc={(train_auc * 100):.2f}')
         
-        writer.add_scalar('Metrics/Train_Micro_F1', train_micro, i)
-        writer.add_scalar('Metrics/Train_Macro_F1', train_macro, i)
-        writer.add_scalar('Metrics/Train_AUC', train_auc, i)
-        write_aucs_by_class(train_aucs, i, writer, mode="Train", mappings=class_names)
+        # log the training loss
+        # AUCs, F1-scores, and confusion matrices are calculated at the specified test intervals
+        writer.add_scalar('Loss/train', epoch_loss, i)
+        train_loss_str = f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}'
+        if (i + 1) % train_test_interval == 0:
+            train_micro, train_aucs, train_macro, _, _ = evaluate(model, device, train_loader, get_conf_mat=False)
+            train_auc = np.mean(train_aucs)
+            logger.info(f'{train_loss_str}, '
+                        f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
+                        f'train_auc={(train_auc * 100):.2f}')
+            
+            writer.add_scalar('Metrics/Train_Micro_F1', train_micro, i)
+            writer.add_scalar('Metrics/Train_Macro_F1', train_macro, i)
+            writer.add_scalar('Metrics/Train_AUC', train_auc, i)
+            write_aucs_by_class(train_aucs, i, writer, mode="Train", mappings=class_names)
+        else:
+            logger.info(train_loss_str)
 
+        # Evaluate the model on the test set if the test interval is reached
         if (i + 1) % test_interval == 0:
             test_micro, test_aucs, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss=loss, get_conf_mat=False)
             
