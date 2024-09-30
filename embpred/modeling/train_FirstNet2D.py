@@ -36,8 +36,8 @@ if __name__ == "__main__":
         ("SimpleNet3D", SimpleNet3D, {})
     ]
 
-    KFOLDS = 4
-    EPOCHS = 2
+    KFOLDS = 2
+    EPOCHS = 1
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
