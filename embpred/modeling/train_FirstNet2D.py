@@ -36,7 +36,7 @@ if __name__ == "__main__":
         ("SimpleNet3D", SimpleNet3D, {})
     ]
 
-    KFOLDS = 4
+    KFOLDS = 2
     EPOCHS = 50
     LR = 0.001
     WEIGHT_DECAY = 0.0001
@@ -44,9 +44,9 @@ if __name__ == "__main__":
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = glob(str(PROCESSED_DATA_DIR / "*undersampled-2.csv"))
+    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes*.csv"))
     
-    for do_sampling in [False]:
+    for do_sampling in [True, False]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
