@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
-from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50
+from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, BiggerNet3D
 from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
 from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
@@ -30,9 +30,10 @@ model_mappings =  {
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
-        ("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
+        #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
+        #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("BiggerNet3D", BiggerNet3D, {}),
         ("SimpleNet3D", SimpleNet3D, {})
     ]
 
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "all-classes*.csv"))
     
-    for do_sampling in [True, False]:
+    for do_sampling in [False, True]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)

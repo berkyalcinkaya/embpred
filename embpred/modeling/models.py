@@ -48,7 +48,40 @@ class FirstNet2D(nn.Module):
         output = self.fc3(f6)
         return output
 
+class BiggerNet3D(nn.Module):
+    def __init__(self, num_classes=10):  # You can specify the number of classes here
+        super(BiggerNet3D, self).__init__()
+        # Define the first convolutional layer: 3 input channels, 8 output channels, 5x5 kernel
+        self.conv1 = nn.Conv2d(3, 8, 5)
+        # Define the second convolutional layer: 8 input channels, 32 output channels, 5x5 kernel
+        self.conv2 = nn.Conv2d(8, 32, 5)
+        # Define the third convolutional layer: 32 input channels, 64 output channels, 3x3 kernel
+        self.conv3 = nn.Conv2d(32, 64, 3)
+        # Define a max pooling layer with 2x2 kernel
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # Fully connected layers with updated sizes based on input image size (3x800x800)
+        self.fc1 = nn.Linear(64 * 95 * 95, 256)  # Input size is calculated from conv layers
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, num_classes)
 
+    def forward(self, x):
+        # Apply the first convolution, ReLU, and max pooling
+        x = self.pool(F.relu(self.conv1(x)))
+        # Apply the second convolution, ReLU, and max pooling
+        x = self.pool(F.relu(self.conv2(x)))
+        # Apply the third convolution, ReLU, and max pooling
+        x = self.pool(F.relu(self.conv3(x)))
+        # Flatten the tensor for the fully connected layers
+        x = torch.flatten(x, 1)  # Flatten all dimensions except batch
+        # Apply fully connected layers with ReLU activations
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        # Output layer (no activation function here because we'll use CrossEntropyLoss, which includes softmax)
+        x = self.fc3(x)
+        return x
+    
+    
 class SimpleNet3D(nn.Module):
     def __init__(self, num_classes=10):  # You can specify the number of classes here
         super(SimpleNet3D, self).__init__()
