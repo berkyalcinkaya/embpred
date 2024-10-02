@@ -61,7 +61,7 @@ class BiggerNet3D(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         
         # Fully connected layers with updated sizes based on input image size (3x800x800)
-        self.fc1 = nn.Linear(64 * 95 * 95, 256)  # Input size is calculated from conv layers
+        self.fc1 = nn.Linear(64 * 97 * 97, 256)  # Update input features to match the output from the conv layers
         self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, num_classes)
 
@@ -80,8 +80,7 @@ class BiggerNet3D(nn.Module):
         # Output layer (no activation function here because we'll use CrossEntropyLoss, which includes softmax)
         x = self.fc3(x)
         return x
-    
-    
+
 class SimpleNet3D(nn.Module):
     def __init__(self, num_classes=10):  # You can specify the number of classes here
         super(SimpleNet3D, self).__init__()
