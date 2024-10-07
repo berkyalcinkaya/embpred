@@ -19,6 +19,10 @@ from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluat
 from embpred.modeling.utils import report_kfolds_results
 import csv
 
+# write code to ensure that pytorch caches are cleared and that the GPU memory is freed up
+torch.cuda.empty_cache()
+
+
 MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 
 model_mappings =  {
@@ -33,7 +37,7 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
         #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("BiggerNet3D", BiggerNet3D, {}),
+        ("BiggerNet3D-rerun", BiggerNet3D, {}),
         ("SimpleNet3D", SimpleNet3D, {})
     ]
 
@@ -46,7 +50,6 @@ if __name__ == "__main__":
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "all-classes*.csv"))
-    print(datasets)
     
     for do_sampling in [False, True]:
         for model_name, model_class, architecture_params in MODELS:
@@ -70,6 +73,9 @@ if __name__ == "__main__":
                 conf_mats = np.zeros((num_classes, num_classes))
                 k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
                 for idx, fold in enumerate(k_fold_splits):
+                    # free up memory for new fold with pytorch
+                    torch.cuda.empty_cache()
+
                     logger.info(f"Fold {idx+1}/{KFOLDS}")
                     log_dir = f"{model_dir}/runs/fold_{idx}"
                     logger.info(f"Tensorboard output >> {log_dir}")
@@ -115,6 +121,8 @@ if __name__ == "__main__":
                     aucs.append(val_auc)
                     macros.append(val_macro)
                     losses.append(avg_loss)
+                    writer.close()
+                    del model, optimizer, criterion, train_loader, val_loader, train_data, val_data
                 
                 
                 ### END of kFolds: Record model performance

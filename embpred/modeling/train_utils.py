@@ -243,6 +243,8 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     trues = np.array(trues)
     preds = np.array(preds)
 
+    
+
     if loss is not None:
         epoch_loss = loss_all / len(loader.dataset)# Calculate the average loss over all samples
     else:
