@@ -95,7 +95,7 @@ class BiggerNet3D224(nn.Module):
         
         # Fully connected layers with updated sizes based on input image size (3x224x224)
         # After three convolutional layers and pooling, the image size will be reduced to 26x26
-        self.fc1 = nn.Linear(64 * 26 * 26, 256)  # Updated to 64 * 26 * 26 to match new conv output
+        self.fc1 = nn.Linear(64 * 25 * 25, 256)  # Updated to 64 * 26 * 26 to match new conv output
         self.fc2 = nn.Linear(256, 128)
         self.fc3 = nn.Linear(128, num_classes)
 
