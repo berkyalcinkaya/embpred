@@ -38,8 +38,7 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
         #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("BiggerNet3D224", BiggerNet3D224, {}),
-        ("SimpleNet3D", SimpleNet3D, {})
+        ("BiggerNet3D224-test", BiggerNet3D224, {})
     ]
 
     KFOLDS = 10

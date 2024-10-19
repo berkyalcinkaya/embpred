@@ -84,7 +84,7 @@ class BiggerNet3D(nn.Module):
 
 class BiggerNet3D224(nn.Module):
     def __init__(self, num_classes=10):  # You can specify the number of classes here
-        super(BiggerNet3D, self).__init__()
+        super(BiggerNet3D224, self).__init__()
         # Define the first convolutional layer: 3 input channels, 8 output channels, 5x5 kernel
         self.conv1 = nn.Conv2d(3, 8, 5)
         # Define the second convolutional layer: 8 input channels, 32 output channels, 5x5 kernel
