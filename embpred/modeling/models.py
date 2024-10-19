@@ -101,6 +101,7 @@ class BiggerNet3D224(nn.Module):
         self.fc3 = nn.Linear(128, num_classes)
 
     def forward(self, x):
+        print(x.shape)
         # Apply the first convolution, ReLU, and max pooling
         x = self.pool(F.relu(self.conv1(x)))
         # Apply the second convolution, ReLU, and max pooling
