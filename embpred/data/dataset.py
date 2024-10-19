@@ -88,7 +88,7 @@ transforms = v2.Compose([
     v2.RandomHorizontalFlip(p=0.5),
     v2.RandomVerticalFlip(p=0.5),
     v2.RandomRotation(degrees=(0, 180)),
-    v2.Resize((224, 224), interpolation='bilinear')  # Use bilinear interpolation for resizing
+    v2.Resize((224, 224))  # Use bilinear interpolation for resizing
 ])
 
 
