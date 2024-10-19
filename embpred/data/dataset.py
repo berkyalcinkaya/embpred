@@ -84,11 +84,11 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
     return splits
 
 
-# rotation
 transforms = v2.Compose([
-      v2.RandomHorizontalFlip(p=0.5),
-      v2.RandomVerticalFlip(p=0.5),
-      v2.RandomRotation(degrees=(0, 180))
+    v2.RandomHorizontalFlip(p=0.5),
+    v2.RandomVerticalFlip(p=0.5),
+    v2.RandomRotation(degrees=(0, 180)),
+    v2.Resize((224, 224), interpolation='bilinear')  # Use bilinear interpolation for resizing
 ])
 
 

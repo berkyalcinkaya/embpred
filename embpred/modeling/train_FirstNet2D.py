@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
-from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, BiggerNet3D
+from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, BiggerNet3D, BiggerNet3D224
 from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
 from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
@@ -28,7 +28,8 @@ MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
     "CustomResNet18": CustomResNet18,
-    "CustomResNet50": CustomResNet50 
+    "CustomResNet50": CustomResNet50 ,
+    "BiggerNet3D224": BiggerNet3D224
 }
 
 if __name__ == "__main__":
@@ -37,11 +38,11 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
         #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("BiggerNet3D-rerun", BiggerNet3D, {}),
+        ("BiggerNet3D224", BiggerNet3D224, {}),
         ("SimpleNet3D", SimpleNet3D, {})
     ]
 
-    KFOLDS = 2
+    KFOLDS = 10
     EPOCHS = 50
     LR = 0.001
     WEIGHT_DECAY = 0.0001
@@ -49,9 +50,9 @@ if __name__ == "__main__":
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes*.csv"))
+    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_undersampled*.csv"))
     
-    for do_sampling in [False, True]:
+    for do_sampling in [False]:
         for model_name, model_class, architecture_params in MODELS:
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
@@ -123,7 +124,6 @@ if __name__ == "__main__":
                     losses.append(avg_loss)
                     writer.close()
                     del model, optimizer, criterion, train_loader, val_loader, train_data, val_data
-                
                 
                 ### END of kFolds: Record model performance
                 report_kfolds_results(model_dir, accs, aucs, macros, losses, conf_mats, KFOLDS)
