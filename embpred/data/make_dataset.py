@@ -246,7 +246,7 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
         assert ims.shape == (len(depths), target_size[0], target_size[1])
         imsave(im_file, ims)
 
-def process_by_focalee_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
+def process_by_focale_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
                            depths=["F-45", "F-30", "F-15","F0", "F15", "F30", "F45"],
                            target_size=(800, 800), pad_images=False, output_ext="tif"):
     '''
