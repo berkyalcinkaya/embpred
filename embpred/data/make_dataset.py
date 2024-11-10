@@ -218,7 +218,7 @@ def get_potential_labels(label_json, embs, label_key):
 
 def process_embryo(emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use):
     depth_ims = load_depths(emb_dir, depths)
-    labels_by_subj = label_json[emb_dir][label_key]
+    labels_by_subj = label_json[emb_dir.name][label_key]
     num_tp = len(depth_ims[depths[0]])
 
     for tp in tqdm(range(num_tp)):
