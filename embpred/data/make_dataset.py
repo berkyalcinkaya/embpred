@@ -242,37 +242,34 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
                 image = extract_emb_frame_2d(image, model, device)
                 image = resize(image, target_size, anti_aliasing=True)
             ims.append(image)
-
         ims = np.stack(ims, axis=0)
         assert ims.shape == (len(depths), target_size[0], target_size[1])
         imsave(im_file, ims)
 
-def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
-                           depths=["F-45", "F-30", "F-15", "F0", "F15", "F30", "F45"],
+def process_by_focalee_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
+                           depths=["F-45", "F-30", "F-15","F0", "F15", "F30", "F45"],
                            target_size=(800, 800), pad_images=False, output_ext="tif"):
     '''
     Code used to generate the datasets for the data labeled by carson. Creates a new directory
     in data/interim that has subdirectories corresponding to all the timepoint labels
     '''
-    try:
-        output_dir = INTERIM_DATA_DIR / output_dir
-        directory = RAW_DATA_DIR / directory
-        label_json_path = RAW_DATA_DIR / label_json
+    output_dir = INTERIM_DATA_DIR / output_dir
+    directory = RAW_DATA_DIR / directory
+    label_json_path = RAW_DATA_DIR / label_json
 
-        depths.reverse()
-        label_key = "timepoint_labels"
+    depths.reverse()
+    label_key = "timepoint_labels"
 
-        label_json = load_labels(label_json_path)
-        embs = [path for path in os.listdir(directory) if os.path.isdir(directory / path)]
-        potential_labels = get_potential_labels(label_json, embs, label_key)
-        create_output_directories(output_dir, potential_labels)
+    label_json = load_labels(label_json_path)
+    embs = [path for path in os.listdir(directory) if os.path.isdir(directory / path)]
+    potential_labels = get_potential_labels(label_json, embs, label_key)
+    create_output_directories(output_dir, potential_labels)
 
-        model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
+    model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
 
-        for emb_dir in tqdm(embs):
-            process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use)
-    except Exception as e:
-        logging.error(f"An error occurred: {e}")
+    for emb_dir in tqdm(embs):
+        process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use)
+
 
 
 def equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=None):
