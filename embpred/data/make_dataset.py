@@ -1,6 +1,6 @@
 from pathlib import Path
 import typer
-from loguru import logger
+from loguru import logger as logging
 from tqdm import tqdm
 from glob import glob
 import os
@@ -18,6 +18,8 @@ from PIL import Image
 import numpy as np
 from collections import Counter
 from sklearn.utils import resample
+from skimage.transform import resize
+
 
 def focus_and_pad(image, target_size, model, device):
     for i in [0,1]:
@@ -180,7 +182,6 @@ def tp_str_search(tp, tp_dict, num_tp):
         return infer_label
     return None
 
-        
 def tp_str_search_left(tp, tp_dict):
     if str(tp) in tp_dict:
         return tp_dict[str(tp)]
@@ -194,73 +195,84 @@ def tp_str_search_right(tp, tp_dict, num_tp):
     if tp >= num_tp:
         return None
     return tp_str_search_right(tp+1, tp_dict, num_tp)
-    
-def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None):
+
+def create_output_directories(output_dir, potential_labels):
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    for label in potential_labels:
+        label_dir = os.path.join(output_dir, label)
+        if not os.path.exists(label_dir):
+            os.mkdir(label_dir)
+
+def load_labels(label_json_path):
+    with open(label_json_path, "r") as file:
+        return json.load(file)
+
+def get_potential_labels(label_json, embs, label_key):
+    potential_labels = np.unique(
+        list(label_json[embs[0]][label_key].values()) + 
+        list(label_json[embs[2]][label_key].values()) + 
+        list(label_json[embs[3]][label_key].values())
+    )
+    return potential_labels
+
+def process_embryo(emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use):
+    depth_ims = load_depths(emb_dir, depths)
+    labels_by_subj = label_json[emb_dir][label_key]
+    num_tp = len(depth_ims[depths[0]])
+
+    for tp in tqdm(range(num_tp)):
+        tp_label = tp_str_search(tp, labels_by_subj, num_tp)
+        if tp_label is None or (classes_to_use and tp_label not in classes_to_use):
+            continue
+
+        fname_im_path = depth_ims[depths[-1]][tp]
+        im_file = output_dir / tp_label / os.path.basename(fname_im_path).replace(".jpeg", f".{output_ext}")
+        if os.path.exists(im_file):
+            logging.info(f"Skipping existing file: {im_file}")
+            continue
+
+        ims = []
+        for depth in depths:
+            fname = depth_ims[depth][tp]
+            image = imread(fname)
+            if pad_images:
+                image = focus_and_pad(image, target_size, model, device)
+            else:
+                image = extract_emb_frame_2d(image, model, device)
+                image = resize(image, target_size, anti_aliasing=True)
+            ims.append(image)
+
+        ims = np.stack(ims, axis=0)
+        assert ims.shape == (len(depths), target_size[0], target_size[1])
+        imsave(im_file, ims)
+
+def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
+                           depths=["F-45", "F-30", "F-15", "F0", "F15", "F30", "F45"],
+                           target_size=(800, 800), pad_images=False, output_ext="tif"):
     '''
     Code used to generate the datasets for the data labeled by carson. Creates a new directory
     in data/interim that has subdirectories corresponding to all the timepoint labels
     '''
-    TARGET_SIZE = (800, 800)
-    output_dir = INTERIM_DATA_DIR / output_dir
-    directory = RAW_DATA_DIR / directory
-    label_json = RAW_DATA_DIR / label_json
-    
-    depths = ["F-45", "F-30", "F-15", "F0", "F15", "F30", "F45"]
-    depths.reverse()
-    LABEL_KEY = "timepoint_labels"
-    
-    if not os.path.exists(output_dir):
-        #shutil.rmtree(output_dir)
-        os.mkdir(output_dir)#shutil.rmtree(output_dir)
-    
-    with open(label_json, "r") as file:
-        label_json = json.load(file)
-    embs = [path for path in os.listdir(directory) if os.path.isdir(directory / path)]
-    
-    potential_labels = np.unique(list(label_json[embs[0]][LABEL_KEY].values()) + 
-                                 list(label_json[embs[2]][LABEL_KEY].values()) + 
-                                 list(label_json[embs[3]][LABEL_KEY].values())) # randomly sample three embryos to get all timepoints
-    for potential_label in potential_labels:
-        label_dir = os.path.join(output_dir, potential_label)
-        if not os.path.exists(label_dir):
-            os.mkdir(label_dir)
-    
-    model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
-    
-    for emb_dir in tqdm(embs):
-        depth_ims = load_depths(directory / emb_dir, depths)
-        
-        labels_by_subj = label_json[emb_dir][LABEL_KEY]
-        
-        num_tp = len(depth_ims[depths[0]])
-        for tp in tqdm(range(num_tp)):
-            
-            # for missing timepoints, interpolate if consistent before and after
-            # timepoint before differs from timepoint after, skip
-            tp_label = tp_str_search(tp, labels_by_subj, num_tp)
-            if tp_label is None:
-                continue
-            
-            if classes_to_use is not None and tp_label not in classes_to_use:
-                continue
-            
-            fname_im_path = depth_ims[depths[-1]][tp]
-            im_file = output_dir / tp_label / os.path.basename(fname_im_path).replace(".jpeg", ".tif")
-            if os.path.exists(im_file):
-                (f"Skipping {im_file}")
-                continue
-                #print("Found existing")
-                #im_file = str(im_file).replace(".tif", "-1.tif")
+    try:
+        output_dir = INTERIM_DATA_DIR / output_dir
+        directory = RAW_DATA_DIR / directory
+        label_json_path = RAW_DATA_DIR / label_json
 
-            # save images as 7 x TARGET_SIZE images stacked along dim 0
-            ims = []
-            for depth in depths:
-                fname = depth_ims[depth][tp]
-                ims.append(imread(fname))
-            ims = [focus_and_pad(im, TARGET_SIZE, model, device) for im in ims]
-            ims = np.stack(ims, axis=0)
-            assert(ims.shape == (7,800,800))
-            imsave(im_file, ims)
+        depths.reverse()
+        label_key = "timepoint_labels"
+
+        label_json = load_labels(label_json_path)
+        embs = [path for path in os.listdir(directory) if os.path.isdir(directory / path)]
+        potential_labels = get_potential_labels(label_json, embs, label_key)
+        create_output_directories(output_dir, potential_labels)
+
+        model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
+
+        for emb_dir in tqdm(embs):
+            process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use)
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
 
 
 def equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=None):
@@ -295,13 +307,22 @@ def equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=None)
 
             
 if __name__ == "__main__":
-    #process_by_focal_depth("Dataset2", "CarsonData1", "output2.json", use_GPU=True, classes_to_use=["tPNf", "t7", "t5", "t6", "t3"])
-    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "CarsonData1", im_type="tif")
+    # #process_by_focal_depth("Dataset2", "CarsonData1", "output2.json", use_GPU=True, classes_to_use=["tPNf", "t7", "t5", "t6", "t3"])
+    # paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "CarsonData1", im_type="tif")
     
-    # paths and labels are the paths to the images and their corresponding labels, respectively
-    paths, labels = equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=1000)
+    # # paths and labels are the paths to the images and their corresponding labels, respectively
+    # paths, labels = equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=1000)
     
-    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
-        mappings = json.load(f)
+    # with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+    #     mappings = json.load(f)
     
-    make_dataset(mappings, paths, labels, dataset_additional_text="undersampled-2")
+    # make_dataset(mappings, paths, labels, dataset_additional_text="undersampled-2")
+    datasets = ["DatasetNew", "Dataset2"]
+    mappings = ["output.json", "output2.json"]
+    
+    # run process by focal depths on both datasets with a target size of 224x224 and with t
+    # depths of -15, 0, 15
+    # save as jpegs
+    for dataset, mapping in zip(datasets, mappings):
+        process_by_focal_depth(dataset, f"{dataset}_Subj1", mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
+                               target_size=(224, 224), pad_images=False, output_ext="jpeg")
