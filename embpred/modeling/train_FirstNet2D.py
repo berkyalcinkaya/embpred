@@ -83,7 +83,8 @@ if __name__ == "__main__":
                     writer = SummaryWriter(log_dir=log_dir)
                     train_ims, train_labels, val_ims, val_labels = fold
 
-                    balancer = DataBalancer(train_ims, train_labels, T=8000, undersample=True, oversample=False)
+                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=False)
+                    balancer.print_before_and_after()
 
                     train_data = CustomImageDataset(balancer.balanced_img_paths(), balancer.balanced_labels(), 
                                                     img_transform=transforms, num_channels=3)
