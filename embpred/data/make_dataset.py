@@ -323,5 +323,5 @@ if __name__ == "__main__":
     # depths of -15, 0, 15
     # save as jpegs
     for dataset, mapping in zip(datasets, mappings):
-        process_by_focal_depth(dataset, f"{dataset}_Subj1", mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
+        process_by_focal_depth(dataset, f'carson-224-3depths', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
                                target_size=(224, 224), pad_images=False, output_ext="jpeg")
