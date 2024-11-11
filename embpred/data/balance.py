@@ -112,6 +112,18 @@ class DataBalancer:
                     if augmentation_tracker[img] >= 3 and all(v >=3 for v in augmentation_tracker.values()):
                         break  # Prevent infinite loop
 
+    def print_before_and_after(self):
+        """
+        Prints the number of samples before and after balancing for each class.
+        """
+        print(f"{'Class':<20}{'Before':<10}{'After':<10}")
+        print("-" * 40)
+        for label in self.class_to_imgs:
+            before = len(self.class_to_imgs[label])
+            after = len(self.balanced_class_to_imgs.get(label, []))
+            print(f"{label:<20}{before:<10}{after:<10}")
+    
+    
     def balanced_img_paths(self) -> List[str]:
         """
         Returns the list of balanced image paths.
