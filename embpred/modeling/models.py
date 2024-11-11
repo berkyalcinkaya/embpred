@@ -146,7 +146,7 @@ class SimpleNet3D(nn.Module):
     
 
 class CustomResNet18(nn.Module):
-   def __init__(self, num_classes, num_dense_layers, dense_neurons, input_shape):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons, input_shape):
         super(CustomResNet18, self).__init__()
         # Load the pretrained ResNet-18 model
         self.resnet = models.resnet18(pretrained=True)
@@ -188,7 +188,7 @@ class CustomResNet18(nn.Module):
 
         # Store all layers in nn.Sequential
         self.classifier = nn.Sequential(*layers)
-    
+
     def forward(self, x):
         # Forward pass through the ResNet backbone
         x = self.resnet(x)
