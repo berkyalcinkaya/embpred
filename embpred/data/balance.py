@@ -9,6 +9,7 @@ import torch
 from torchvision.io import read_image
 from loguru import logger
 from tqdm import tqdm
+from skimage.io import imsave
 
 class DataBalancer:
     def __init__(
@@ -105,7 +106,9 @@ class DataBalancer:
                     try:
                         image = read_image(img)
                         augmented_image = self.transforms(image)
-                        augmented_image.save(aug_path)
+                        augmented_image = augmented_image.permute(1, 2, 0).numpy()
+                        assert augmented_image.shape[2] == 3, "Augmented image must have 3 channels."
+                        imsave(aug_path, augmented_image.astype('uint8'))
                         self.balanced_class_to_imgs[label].append(aug_path)
                         self.balanced_class_to_labels[label].append(label)
                         augmented += 1
