@@ -7,6 +7,8 @@ from torchvision import transforms as v2
 from typing import List, Optional, Callable, Tuple
 import torch
 from torchvision.io import read_image
+from loguru import logger
+from tqdm import tqdm
 
 class DataBalancer:
     def __init__(
@@ -46,6 +48,7 @@ class DataBalancer:
         else:
             self.aug_dir = aug_dir
 
+        logger.info(f"Augmentation directory: {self.aug_dir}")
         os.makedirs(self.aug_dir, exist_ok=True)
 
         # Organize images by class
@@ -61,7 +64,7 @@ class DataBalancer:
         self._balance()
 
     def _balance(self):
-        for label, imgs in self.class_to_imgs.items():
+        for label, imgs in tqdm(self.class_to_imgs.items()):
             self.balanced_class_to_imgs[label] = []
             self.balanced_class_to_labels[label] = []
             num_imgs = len(imgs)
@@ -79,7 +82,9 @@ class DataBalancer:
             if self.oversample and len(self.balanced_class_to_imgs[label]) < self.T:
                 needed = self.T - len(self.balanced_class_to_imgs[label])
                 augmentable_imgs = self.balanced_class_to_imgs[label].copy()
+                logger.info(f"Class {label} | Augmenting {needed} images starting from {len(augmentable_imgs)}")
                 if not augmentable_imgs:
+                    logger.warning(f"No images to augment for class {label}")
                     continue
                 augmentation_tracker = {img: 0 for img in augmentable_imgs}
                 augmented = 0
@@ -89,8 +94,6 @@ class DataBalancer:
                 while augmented < needed:
                     img = augmentable_imgs[idx % img_count]
                     idx += 1
-                    if augmentation_tracker[img] >= 3:
-                        continue  # Limit to 3 augmentations per image
                     augmentation_tracker[img] += 1
                     aug_number = augmentation_tracker[img]
                     base_name = os.path.splitext(os.path.basename(img))[0]
@@ -107,10 +110,8 @@ class DataBalancer:
                         self.balanced_class_to_labels[label].append(label)
                         augmented += 1
                     except Exception:
+                        logger.exception(f"Error augmenting image {img}")
                         continue  # Skip if any error occurs
-
-                    if augmentation_tracker[img] >= 3 and all(v >=3 for v in augmentation_tracker.values()):
-                        break  # Prevent infinite loop
 
     def print_before_and_after(self):
         """
