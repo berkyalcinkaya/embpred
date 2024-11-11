@@ -11,7 +11,10 @@ import matplotlib.pyplot as plt
 import os
 from torchvision.io import read_image
 import skimage 
+import tqdm
+import glob
 plt.rcParams["savefig.bbox"] = 'tight'
+from torchvision import transforms as v2
 
 def get_class_names_by_label(mapping_dict)->dict:
     label_ints = mapping_dict.values()
@@ -86,9 +89,7 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
 
 transforms = v2.Compose([
     v2.RandomHorizontalFlip(p=0.5),
-    v2.RandomVerticalFlip(p=0.5),
-    v2.RandomRotation(degrees=(0, 180)),
-    v2.Resize((224, 224))  # Use bilinear interpolation for resizing
+    v2.RandomVerticalFlip(p=0.5)
 ])
 
 
