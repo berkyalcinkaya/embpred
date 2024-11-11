@@ -240,8 +240,9 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
                 image = focus_and_pad(image, target_size, model, device)
             else:
                 image = extract_emb_frame_2d(image, model, device)
+                # resize image and preserve datatype and range
                 image = resize(image, target_size, anti_aliasing=True, preserve_range=True)
-            ims.append(image)
+            ims.append(image.astype(np.uint8))
         ims = np.stack(ims, axis=-1)
         assert ims.shape == ( target_size[0], target_size[1], len(depths))
         imsave(im_file, ims)
