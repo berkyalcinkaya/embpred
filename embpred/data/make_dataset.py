@@ -322,6 +322,10 @@ if __name__ == "__main__":
     # run process by focal depths on both datasets with a target size of 224x224 and with t
     # depths of -15, 0, 15
     # save as jpegs
-    for dataset, mapping in zip(datasets, mappings):
-        process_by_focal_depth(dataset, f'carson-224-3depths', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
-                               target_size=(224, 224), pad_images=False, output_ext="jpeg")
+    # for dataset, mapping in zip(datasets, mappings):
+    #     process_by_focal_depth(dataset, f'carson-224-3depths', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
+    #                            target_size=(224, 224), pad_images=False, output_ext="jpeg")
+    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "'carson-224-3depths", im_type="jpeg")
+    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+        mappings = json.load(f)
+    make_dataset(mappings, paths, labels, dataset_additional_text="carson-224-3depths")

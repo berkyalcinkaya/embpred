@@ -1,131 +1,144 @@
-from embpred.config import INTERIM_DATA_DIR
-import glob
-import argparse
-import logging
-from PIL import Image
-from tqdm import tqdm
-from torchvision import transforms as v2
 import os
+import glob
+import shutil
+import random
+from PIL import Image
+from torchvision import transforms as v2
+from typing import List, Optional, Callable, Tuple
+import torch
+from torchvision.io import read_image
 
-def balance_data(data_dir, cutoff):
-    """
-    Balances the dataset by ensuring each class has at least 'cutoff' number of images.
-    Applies horizontal and vertical flips for augmentation until the cutoff is met.
-    
-    New images are saved with the format 'base_name-aug{x}.jpg', where x is the
-    number of times the original image has been augmented.
-    
-    Parameters:
-    - data_dir (str): Path to the main directory containing class subdirectories.
-    - cutoff (int): Minimum number of images required per class.
-    """
-    transform = v2.Compose([
-        v2.RandomHorizontalFlip(p=0.5),
-        v2.RandomVerticalFlip(p=0.5),
-    ])
-    
-    classes = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
-    logging.info(f"Found {len(classes)} classes in '{data_dir}'.")
+class DataBalancer:
+    def __init__(
+        self,
+        img_paths: List[str],
+        img_labels: List[int],
+        T: int,
+        transforms: Optional[Callable] = None,
+        oversample: bool = True,
+        undersample: bool = True,
+        aug_dir: Optional[str] = None
+    ):
+        """
+        Initializes the DataBalancer with image paths, labels, and balancing parameters.
 
-    for cls in tqdm(classes, desc="Balancing Classes"):
-        cls_dir = os.path.join(data_dir, cls)
-        image_paths = glob.glob(os.path.join(cls_dir, "*.*"))
-        current_count = len(image_paths)
-        logging.debug(f"Class '{cls}': {current_count} images found.")
-        
-        if current_count < cutoff:
-            needed = cutoff - current_count
-            augmented_count = 0
-            idx = 0
-            augmentation_tracker = {}
-            logging.info(f"Balancing class '{cls}': {current_count} -> {cutoff} (need {needed} augmentations).")
-            
-            while augmented_count < needed and idx < len(image_paths) * 4:
-                img_path = image_paths[idx % len(image_paths)]
-                idx += 1
-                base_name = os.path.splitext(os.path.basename(img_path))[0]
-                
-                # Initialize augmentation count for the image
-                if base_name not in augmentation_tracker:
-                    augmentation_tracker[base_name] = 0
-                
-                # Limit to a maximum of 3 augmentations per image to prevent over-augmentation
-                if augmentation_tracker[base_name] >= 3:
+        Parameters:
+        - img_paths (List[str]): List of image file paths.
+        - img_labels (List[int]): Corresponding list of labels.
+        - T (int): Target number of images per class.
+        - transforms (Callable, optional): Transformations to apply for augmentation.
+        - oversample (bool): Whether to perform oversampling.
+        - undersample (bool): Whether to perform undersampling.
+        - aug_dir (str, optional): Directory to save augmented images. Defaults to '.aug' in the first image's directory.
+        """
+        assert len(img_paths) == len(img_labels), "img_paths and img_labels must be the same length."
+        self.original_img_paths = img_paths
+        self.original_img_labels = img_labels
+        self.T = T
+        self.transforms = transforms
+        self.oversample = oversample
+        self.undersample = undersample
+
+        # Determine augmentation directory
+        if aug_dir is None:
+            base_dir = os.path.dirname(img_paths[0])
+            self.aug_dir = os.path.join(base_dir, '.aug')
+        else:
+            self.aug_dir = aug_dir
+
+        os.makedirs(self.aug_dir, exist_ok=True)
+
+        # Organize images by class
+        self.class_to_imgs = {}
+        for path, label in zip(self.original_img_paths, self.original_img_labels):
+            if label not in self.class_to_imgs:
+                self.class_to_imgs[label] = []
+            self.class_to_imgs[label].append(path)
+
+        # Perform balancing
+        self.balanced_class_to_imgs = {}
+        self.balanced_class_to_labels = {}
+        self._balance()
+
+    def _balance(self):
+        for label, imgs in self.class_to_imgs.items():
+            self.balanced_class_to_imgs[label] = []
+            self.balanced_class_to_labels[label] = []
+            num_imgs = len(imgs)
+
+            # Undersampling
+            if self.undersample and num_imgs > self.T:
+                undersampled_imgs = random.sample(imgs, self.T)
+                self.balanced_class_to_imgs[label].extend(undersampled_imgs)
+                self.balanced_class_to_labels[label].extend([label]*self.T)
+            else:
+                self.balanced_class_to_imgs[label].extend(imgs)
+                self.balanced_class_to_labels[label].extend([label]*num_imgs)
+
+            # Oversampling
+            if self.oversample and len(self.balanced_class_to_imgs[label]) < self.T:
+                needed = self.T - len(self.balanced_class_to_imgs[label])
+                augmentable_imgs = self.balanced_class_to_imgs[label].copy()
+                if not augmentable_imgs:
                     continue
-                
-                try:
-                    img = Image.open(img_path)
-                except Exception as e:
-                    logging.warning(f"Failed to open image '{img_path}': {e}")
-                    continue
-                
-                augmented_img = transform(img)
-                augmentation_tracker[base_name] += 1
-                aug_number = augmentation_tracker[base_name]
-                aug_name = f"{base_name}-aug{aug_number}.jpg"
-                aug_path = os.path.join(cls_dir, aug_name)
-                
-                if not os.path.exists(aug_path):
+                augmentation_tracker = {img: 0 for img in augmentable_imgs}
+                augmented = 0
+                img_count = len(augmentable_imgs)
+                idx = 0
+
+                while augmented < needed:
+                    img = augmentable_imgs[idx % img_count]
+                    idx += 1
+                    if augmentation_tracker[img] >= 3:
+                        continue  # Limit to 3 augmentations per image
+                    augmentation_tracker[img] += 1
+                    aug_number = augmentation_tracker[img]
+                    base_name = os.path.splitext(os.path.basename(img))[0]
+                    img_ext = os.path.splitext(img)[1]
+                    aug_name = f"{base_name}-aug{aug_number}{img_ext}"
+                    aug_path = os.path.join(self.aug_dir, aug_name)
+
+                    # Apply transforms
                     try:
-                        augmented_img.save(aug_path)
-                        augmented_count += 1
-                        logging.debug(f"Saved augmented image '{aug_path}'.")
-                    except Exception as e:
-                        logging.warning(f"Failed to save augmented image '{aug_path}': {e}")
-                
-                # Prefer to augment more images vs multiple aug per image
-                # So, iterate over images and augment each one as needed
-                
-            logging.info(f"Class '{cls}': {current_count} -> {current_count + augmented_count} images.")
-    
-    logging.info("Data balancing completed.")
+                        image = read_image(img)
+                        augmented_image = self.transforms(image)
+                        augmented_image.save(aug_path)
+                        self.balanced_class_to_imgs[label].append(aug_path)
+                        self.balanced_class_to_labels[label].append(label)
+                        augmented += 1
+                    except Exception:
+                        continue  # Skip if any error occurs
 
-def print_samples_per_class(data_dir: str) -> None:
-    """
-    Prints the number of samples per class in the dataset.
+                    if augmentation_tracker[img] >= 3 and all(v >=3 for v in augmentation_tracker.values()):
+                        break  # Prevent infinite loop
 
-    Parameters:
-    - data_dir (str): Path to the main directory containing class subdirectories.
-    """
-    classes = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
-    logging.info("Number of samples per class:")
-    for cls in classes:
-        cls_dir = os.path.join(data_dir, cls)
-        image_paths = glob.glob(os.path.join(cls_dir, "*.*"))
-        count = len(image_paths)
-        logging.info(f"Class '{cls}': {count} samples")
+    def balanced_img_paths(self) -> List[str]:
+        """
+        Returns the list of balanced image paths.
 
-def main():
-    parser = argparse.ArgumentParser(description="Balance dataset by augmenting images.")
-    parser.add_argument("directory", type=str, help="Name of the directory within INTERIM containing class subdirectories.")
-    parser.add_argument("-d", "--dist", action="store_true", help="Print distribution of samples per class.")
-    parser.add_argument("-t", "--threshold", type=int, help="Threshold T for minimum number of images per class.")
-    
-    args = parser.parse_args()
-    
-    # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    
-    # Construct full path
-    data_dir = os.path.join(INTERIM_DATA_DIR, args.directory)
-    
-    if not os.path.isdir(data_dir):
-        logging.error(f"The directory '{data_dir}' does not exist.")
-        return
-    
-    if args.dist:
-        print_samples_per_class(data_dir)
-    else:
-        if args.threshold is None:
-            logging.error("Threshold T must be specified with -t when not using --dist.")
-            return
-        logging.info("Starting data balancing...")
-        balance_data(data_dir, args.threshold)
-        logging.info("Data balancing process finished.")
-        print_samples_per_class(data_dir)
+        Returns:
+        - List[str]: List of image file paths after balancing.
+        """
+        balanced_paths = []
+        for imgs in self.balanced_class_to_imgs.values():
+            balanced_paths.extend(imgs)
+        return balanced_paths
 
-if __name__ == "__main__":
-    main()
+    def balanced_labels(self) -> List[int]:
+        """
+        Returns the list of labels corresponding to balanced image paths.
+
+        Returns:
+        - List[int]: List of labels after balancing.
+        """
+        balanced_labels = []
+        for labels in self.balanced_class_to_labels.values():
+            balanced_labels.extend(labels)
+        return balanced_labels
+
+    def __del__(self):
+        """
+        Destructor to clean up the augmentation directory and its contents.
+        """
+        if os.path.exists(self.aug_dir):
+            shutil.rmtree(self.aug_dir)
