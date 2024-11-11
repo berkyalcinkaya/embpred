@@ -1,4 +1,4 @@
-from embpred.config import INTERIM_DATA_DIRimport os
+from embpred.config import INTERIM_DATA_DIR
 import glob
 import argparse
 import logging
@@ -109,11 +109,8 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
     
-    # Define the INTERIM directory path
-    INTERIM_DIR = "/path/to/INTERIM"  # Update this path as needed
-    
     # Construct full path
-    data_dir = os.path.join(INTERIM_DIR, args.directory)
+    data_dir = os.path.join(INTERIM_DATA_DIR, args.directory)
     
     if not os.path.isdir(data_dir):
         logging.error(f"The directory '{data_dir}' does not exist.")
