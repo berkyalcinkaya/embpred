@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
-from embpred.config import MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
+from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, BiggerNet3D, BiggerNet3D224
 from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
@@ -39,7 +39,7 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
         #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
         #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("BiggerNet3D224-undersample", BiggerNet3D224, {})
+        ("BiggerNet3D224-full-balance", BiggerNet3D224, {})
     ]
 
     KFOLDS = 5
@@ -83,7 +83,8 @@ if __name__ == "__main__":
                     writer = SummaryWriter(log_dir=log_dir)
                     train_ims, train_labels, val_ims, val_labels = fold
 
-                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=False)
+                    balancer = DataBalancer(train_ims, train_labels, T=7000, undersample=True, oversample=True, transforms=transforms,
+                                            aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
 
                     train_data = CustomImageDataset(balancer.balanced_img_paths(), balancer.balanced_labels(), 

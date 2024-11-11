@@ -145,43 +145,50 @@ class SimpleNet3D(nn.Module):
         return x
     
 
-import torch
-import torch.nn as nn
-import torchvision.models as models
-
 class CustomResNet18(nn.Module):
-    def __init__(self, num_classes, num_dense_layers, dense_neurons):
+   def __init__(self, num_classes, num_dense_layers, dense_neurons, input_shape):
         super(CustomResNet18, self).__init__()
         # Load the pretrained ResNet-18 model
         self.resnet = models.resnet18(pretrained=True)
         
-        # Freeze all the ResNet-18 layers
+        # Freeze all ResNet-18 layers
         for param in self.resnet.parameters():
             param.requires_grad = False
         
         # Remove the original fully connected layer
-        num_ftrs = self.resnet.fc.in_features  # In ResNet-18, this is 512
+        num_ftrs = self.resnet.fc.in_features  # Typically 512 for ResNet-18
         self.resnet.fc = nn.Identity()  # Replace the final fc layer with an identity layer
 
-        # If a single integer is provided, apply it to all dense layers
+        # Determine the feature size based on input_shape
+        # This step ensures compatibility if the ResNet architecture is altered
+        dummy_input = torch.zeros(1, *input_shape)
+        self.resnet.eval()
+        with torch.no_grad():
+            features = self.resnet(dummy_input)
+            if isinstance(features, torch.Tensor):
+                feature_size = features.shape[1]
+            else:
+                raise ValueError("Unexpected feature output from ResNet backbone.")
+
+        # If a single integer is provided for dense_neurons, replicate it for all dense layers
         if isinstance(dense_neurons, int):
             dense_neurons = [dense_neurons] * num_dense_layers
 
         # Define the custom dense layers dynamically based on the specified number of layers
         layers = []
-        input_size = num_ftrs
+        input_size = feature_size
         for i, neurons in enumerate(dense_neurons):
             layers.append(nn.Linear(input_size, neurons))  # Fully connected layer
             layers.append(nn.ReLU(inplace=True))          # ReLU activation
             layers.append(nn.Dropout(0.5))                # Dropout
-            input_size = neurons
-        
+            input_size = neurons  # Update input size for the next layer
+
         # Final output layer
-        layers.append(nn.Linear(input_size, num_classes))  # Final output layer, no softmax
-        
+        layers.append(nn.Linear(input_size, num_classes))  # Final output layer, no activation
+
         # Store all layers in nn.Sequential
         self.classifier = nn.Sequential(*layers)
-
+    
     def forward(self, x):
         # Forward pass through the ResNet backbone
         x = self.resnet(x)
