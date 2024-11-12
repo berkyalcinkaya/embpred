@@ -132,7 +132,7 @@ if __name__ == "__main__":
                     macros.append(val_macro)
                     losses.append(avg_loss)
                     writer.close()
-                    del model, optimizer, criterion, train_loader, val_loader, train_data, val_data
+                    del model, optimizer, criterion, train_loader, val_loader, train_data, val_data, balancer
                 
                 ### END of kFolds: Record model performance
                 report_kfolds_results(model_dir, accs, aucs, macros, losses, conf_mats, KFOLDS)

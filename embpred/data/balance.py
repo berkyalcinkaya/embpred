@@ -155,3 +155,4 @@ class DataBalancer:
         print("DELETING AUGMENTATION DIRECTORY")
         if os.path.exists(self.aug_dir):
             shutil.rmtree(self.aug_dir)
+        super().__del__()
