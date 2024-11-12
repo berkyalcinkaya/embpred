@@ -94,8 +94,11 @@ transforms = v2.Compose([
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True):
+    def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True, check_exists=True):
         self.img_paths = img_paths
+        if check_exists:
+            for img_path in self.img_paths:
+                assert os.path.exists(img_path), f"Image path {img_path} does not exist."
         
         # determine image type from the first image in img_paths and save this as an attribute
         self.img_type = self.img_paths[0].split(".")[-1]

@@ -102,19 +102,14 @@ class DataBalancer:
                     aug_name = f"{base_name}-aug{aug_number}{img_ext}"
                     aug_path = os.path.join(self.aug_dir, aug_name)
 
-                    # Apply transforms
-                    try:
-                        image = read_image(img)
-                        augmented_image = self.transforms(image)
-                        augmented_image = augmented_image.permute(1, 2, 0).numpy()
-                        assert augmented_image.shape[2] == 3, "Augmented image must have 3 channels."
-                        imsave(aug_path, augmented_image.astype('uint8'))
-                        self.balanced_class_to_imgs[label].append(aug_path)
-                        self.balanced_class_to_labels[label].append(label)
-                        augmented += 1
-                    except Exception:
-                        logger.exception(f"Error augmenting image {img}")
-                        continue  # Skip if any error occurs
+                    image = read_image(img)
+                    augmented_image = self.transforms(image)
+                    augmented_image = augmented_image.permute(1, 2, 0).numpy()
+                    assert augmented_image.shape[2] == 3, "Augmented image must have 3 channels."
+                    imsave(aug_path, augmented_image.astype('uint8'))
+                    self.balanced_class_to_imgs[label].append(aug_path)
+                    self.balanced_class_to_labels[label].append(label)
+                    augmented += 1
 
     def print_before_and_after(self):
         """
