@@ -107,6 +107,7 @@ class DataBalancer:
                     augmented_image = augmented_image.permute(1, 2, 0).numpy()
                     assert augmented_image.shape[2] == 3, "Augmented image must have 3 channels."
                     imsave(aug_path, augmented_image.astype('uint8'))
+                    assert os.path.exists(aug_path), f"Augmented image not saved at {aug_path}"
                     self.balanced_class_to_imgs[label].append(aug_path)
                     self.balanced_class_to_labels[label].append(label)
                     augmented += 1
@@ -151,5 +152,6 @@ class DataBalancer:
         """
         Destructor to clean up the augmentation directory and its contents.
         """
+        print("DELETING AUGMENTATION DIRECTORY")
         if os.path.exists(self.aug_dir):
             shutil.rmtree(self.aug_dir)

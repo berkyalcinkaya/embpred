@@ -97,8 +97,13 @@ class CustomImageDataset(Dataset):
     def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True, check_exists=True):
         self.img_paths = img_paths
         if check_exists:
+            num_exists = 0
             for img_path in self.img_paths:
-                assert os.path.exists(img_path), f"Image path {img_path} does not exist."
+                if os.path.exists(img_path):
+                    num_exists += 1
+            if num_exists < len(self.img_paths):
+                raise ValueError(f"Only {num_exists} of {len(self.img_paths)} images exist.")
+                
         
         # determine image type from the first image in img_paths and save this as an attribute
         self.img_type = self.img_paths[0].split(".")[-1]

@@ -20,7 +20,7 @@ def load_faster_RCNN_model_device(use_GPU=True):
     model = torch.load(RCNN_PATH, map_location=device)
     return model,device
 
-def extract_emb_frame_2d(embframe, model, device):
+def extract_emb_frame_2d(embframe, model, device):# what is return type of this function? 
     return ExtractEmbFrame(embframe, embframe, embframe, model, device)[0]
 
 def ExtractEmbFrame(r_channel, g_channel, b_channel, model, device):
