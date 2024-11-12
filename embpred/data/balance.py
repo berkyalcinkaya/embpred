@@ -148,11 +148,8 @@ class DataBalancer:
             balanced_labels.extend(labels)
         return balanced_labels
 
-    def __del__(self):
+    def delete_augmentation(self):
         """
-        Destructor to clean up the augmentation directory and its contents.
+        Deletes the augmentation directory and its contents.
         """
-        print("DELETING AUGMENTATION DIRECTORY")
-        if os.path.exists(self.aug_dir):
-            shutil.rmtree(self.aug_dir)
-        super().__del__()
+        shutil.rmtree(self.aug_dir)
