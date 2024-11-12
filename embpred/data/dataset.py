@@ -103,7 +103,7 @@ class CustomImageDataset(Dataset):
                     num_exists += 1
             if num_exists < len(self.img_paths):
                 raise ValueError(f"Only {num_exists} of {len(self.img_paths)} images exist.")
-        print("--All images exist: {num_exists} of {len(self.img_paths)} images exist.--")  
+        print(f"--All images exist: {num_exists} of {len(self.img_paths)} images exist.--")  
         
         # determine image type from the first image in img_paths and save this as an attribute
         self.img_type = self.img_paths[0].split(".")[-1]
