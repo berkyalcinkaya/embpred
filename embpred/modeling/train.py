@@ -86,13 +86,15 @@ if __name__ == "__main__":
                     balancer = DataBalancer(train_ims, train_labels, T=7000, undersample=True, oversample=True, transforms=transforms,
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
-
-                    if fold == 0:
-                        continue # skip fold 0 for testing
                         
 
                     train_data = CustomImageDataset(balancer.balanced_img_paths(), balancer.balanced_labels(), 
                                                     img_transform=transforms, num_channels=3)
+                    print(idx)
+                    if idx == 0:
+                        print("Skipping fold 0")
+                        continue # skip fold 0 for testing
+
                     val_data = CustomImageDataset(val_ims, val_labels, img_transform=transforms, num_channels=3)
 
                     sampler, do_shuffle = (ImbalancedDatasetSampler(train_data), False) if do_sampling else (None, True)
