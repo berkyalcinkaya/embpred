@@ -1,4 +1,3 @@
-from sympy import Union
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -6,8 +5,9 @@ import torch.nn.functional as F
 import cv2
 from torchvision import transforms
 import numpy as np
-from typing import List
+from typing import List, Union
 import argparse
+from embpred.config import MODELS_DIR
 
 mapping = {0: "t1", 1: "tPN", 2: "tPNf", 3: "t2", 4: "t3", 5: "t4", 6: "t5", 7: "t6",
     8: "t7",
@@ -20,8 +20,8 @@ mapping = {0: "t1", 1: "tPN", 2: "tPNf", 3: "t2", 4: "t3", 5: "t4", 6: "t5", 7: 
 
 NCLASS = len(mapping)
 SIZE = (224, 224)
-RCNN_PATH = "rcnn.pt"
-MODEL_PATH = "over-under-sampled-224.pth"
+RCNN_PATH = MODELS_DIR / "rcnn.pt"
+MODEL_PATH = MODELS_DIR / "over-under-sampled-224.pth"
 
 def load_faster_RCNN_model_device(RCNN_PATH, use_GPU=True):
     if use_GPU:
@@ -192,7 +192,7 @@ def inference(model, device, depths_ims: Union[List[np.ndarray], torch.Tensor, n
     Returns:
     - output: The model's output. Tensor if map_output is False, int if map_output is True, class name as a string if output_to_str.
     """
-    assert len(depths_ims) == 3, "depths_ims must contain three images."
+    assert (len(depths_ims) == 3 or (isinstance(depths_ims, np.ndarray) and depths_ims.shape[-1] == 3)), "depths_ims must contain three images."
     
     if get_bbox:
         assert rcnn_model is not None, "rcnn_model must be provided if get_bbox is True."
@@ -200,20 +200,23 @@ def inference(model, device, depths_ims: Union[List[np.ndarray], torch.Tensor, n
         assert resize, "Image must be resized if get_bbox is True."
         depths_ims= [extract_emb_frame_2d(depths_ims[i], rcnn_model, device) for i in range(3)]
     
-    if isinstance(depths_ims, List):
+    if isinstance(depths_ims, list):
         image = np.stack(depths_ims, axis=-1)
     else:
         image = depths_ims
     
     if totensor:
-        image = transforms.ToTensor()(image)
+        image = torch.from_numpy(image).float()
+        image = image.permute(2, 0, 1)
+        print(image.shape)
     if resize:
         image = transforms.Resize((224, 224))(image)
     if normalize:
-        image /= 255.0
+        image = image.float() / 255
     
     # Add a batch dimension
     image = image.unsqueeze(0).to(device)
+    print(image.shape)
     
     # Perform inference
     model.eval()

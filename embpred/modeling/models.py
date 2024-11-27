@@ -115,6 +115,35 @@ class BiggerNet3D224(nn.Module):
         x = self.fc3(x)
         return x
 
+class SmallerNet3D224(nn.Module):
+    def __init__(self, num_classes=10):
+        super(SmallerNet3D224, self).__init__()
+        # Convolutional layers
+        self.conv1 = nn.Conv2d(3, 4, 3)   # Input channels: 3, Output channels: 4, Kernel size: 3
+        self.conv2 = nn.Conv2d(4, 16, 3)  # Input channels: 4, Output channels: 16, Kernel size: 3
+        self.pool = nn.MaxPool2d(2, 2)     # Max pooling with 2x2 kernel
+
+        # Fully connected layers
+        self.fc1 = nn.Linear(16 * 54 * 54, 128)  # Input features: 16*54*54
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, num_classes)
+
+    def forward(self, x):
+        # Convolutional layers with ReLU activation and pooling
+        x = self.pool(F.relu(self.conv1(x)))  # After conv1 -> ReLU -> pool
+        x = self.pool(F.relu(self.conv2(x)))  # After conv2 -> ReLU -> pool
+
+        # Flatten the tensor for fully connected layers
+        x = torch.flatten(x, 1)  # Flatten all dimensions except batch
+
+        # Fully connected layers with ReLU activation
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+
+        # Output layer (no activation function)
+        x = self.fc3(x)
+        return x
+
 class SimpleNet3D(nn.Module):
     def __init__(self, num_classes=10):  # You can specify the number of classes here
         super(SimpleNet3D, self).__init__()

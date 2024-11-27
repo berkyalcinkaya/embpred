@@ -12,7 +12,8 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
-from embpred.modeling.models import FirstNet2D, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, BiggerNet3D, BiggerNet3D224
+from embpred.modeling.models import (FirstNet2D, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
+                                    BiggerNet3D, BiggerNet3D224, SmallerNet3D224)
 from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
 from embpred.data.balance import DataBalancer
@@ -30,16 +31,15 @@ model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
     "CustomResNet18": CustomResNet18,
     "CustomResNet50": CustomResNet50 ,
-    "BiggerNet3D224": BiggerNet3D224
+    "BiggerNet3D224": BiggerNet3D224,
+    "SmallerNet3D224": SmallerNet3D224
 }
 
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        #("CustomResNet18-1layer-rerun", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
-        #("CustomResNet18-2layer", CustomResNet18, {"num_dense_layers": 2, "dense_neurons": 64}),
-        #("CustomResNet50-1layer", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("BiggerNet3D224-full-balance", BiggerNet3D224, {})
+        ("SmallerNet3D224-full-balance", SmallerNet3D224, {}),
+        ("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64})
     ]
 
     KFOLDS = 5
@@ -68,7 +68,6 @@ if __name__ == "__main__":
                                                 additional_ids=additional_ids)
                 logger.info(f"MODEL DIR: {model_dir}")
                 
-
                 # train model over k-folds, record performance
                 accs, aucs, macros, losses = [], [], [], []
                 conf_mats = np.zeros((num_classes, num_classes))
