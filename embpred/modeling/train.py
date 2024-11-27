@@ -43,7 +43,7 @@ if __name__ == "__main__":
         ("SmallerNet3D224-full-balance", SmallerNet3D224, {})
     ]
 
-    KFOLDS = 5
+    KFOLDS = 8
     EPOCHS = 50
     LR = 0.001
     WEIGHT_DECAY = 0.0001
