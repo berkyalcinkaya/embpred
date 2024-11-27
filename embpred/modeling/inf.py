@@ -208,7 +208,6 @@ def inference(model, device, depths_ims: Union[List[np.ndarray], torch.Tensor, n
     if totensor:
         image = torch.from_numpy(image).float()
         image = image.permute(2, 0, 1)
-        print(image.shape)
     if resize:
         image = transforms.Resize((224, 224))(image)
     if normalize:
@@ -216,7 +215,6 @@ def inference(model, device, depths_ims: Union[List[np.ndarray], torch.Tensor, n
     
     # Add a batch dimension
     image = image.unsqueeze(0).to(device)
-    print(image.shape)
     
     # Perform inference
     model.eval()

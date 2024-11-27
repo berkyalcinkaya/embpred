@@ -14,8 +14,9 @@ from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from embpred.modeling.models import (FirstNet2D, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
                                     BiggerNet3D, BiggerNet3D224, SmallerNet3D224)
-from embpred.data.dataset import (transforms, CustomImageDataset, get_data_from_dataset_csv, 
-                            get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label)
+from embpred.data.dataset import (get_basic_transforms, transforms, CustomImageDataset, get_data_from_dataset_csv, 
+                            get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label, 
+                            get_transforms)
 from embpred.data.balance import DataBalancer
 from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
 from embpred.modeling.utils import report_kfolds_results
@@ -54,6 +55,7 @@ if __name__ == "__main__":
     
     for do_sampling in [False]:
         for model_name, model_class, architecture_params in MODELS:
+            is_res_net = "ResNet" in model_name
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
                 dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
@@ -82,14 +84,14 @@ if __name__ == "__main__":
                     writer = SummaryWriter(log_dir=log_dir)
                     train_ims, train_labels, val_ims, val_labels = fold
 
-                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=True, transforms=transforms,
+                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                         
                     train_data = CustomImageDataset(balancer.balanced_img_paths(), balancer.balanced_labels(), 
-                                                    img_transform=transforms, num_channels=3)
+                                                    img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
 
-                    val_data = CustomImageDataset(val_ims, val_labels, img_transform=transforms, num_channels=3)
+                    val_data = CustomImageDataset(val_ims, val_labels, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
 
                     sampler, do_shuffle = (ImbalancedDatasetSampler(train_data), False) if do_sampling else (None, True)
 

@@ -13,6 +13,7 @@ from torchvision.io import read_image
 import skimage 
 import tqdm
 import glob
+from embpred.data.my_transforms import ShuffleColor
 plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision import transforms as v2
 
@@ -87,10 +88,29 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
     return splits
 
 
-transforms = v2.Compose([
-    v2.RandomHorizontalFlip(p=0.5),
-    v2.RandomVerticalFlip(p=0.5)
-])
+def get_transforms(image_net_transforms = False):
+    if image_net_transforms:
+        transforms = v2.Compose([
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomVerticalFlip(p=0.5),
+            v2.RandomApply([ShuffleColor()], p=0.5),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+    else:
+        transforms = v2.Compose([
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomVerticalFlip(p=0.5),
+            # add my custom transform
+            v2.RandomApply([ShuffleColor()], p=0.5)
+        ])
+    
+    return transforms
+
+def get_basic_transforms():
+    return v2.Compose([
+        v2.RandomHorizontalFlip(p=0.5),
+        v2.RandomVerticalFlip(p=0.5),
+    ])
 
 
 class CustomImageDataset(Dataset):
