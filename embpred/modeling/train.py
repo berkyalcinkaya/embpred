@@ -39,8 +39,8 @@ model_mappings =  {
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("SmallerNet3D224-full-balance", SmallerNet3D224, {}),
-        ("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64})
+        ("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("SmallerNet3D224-full-balance", SmallerNet3D224, {})
     ]
 
     KFOLDS = 5
@@ -56,6 +56,7 @@ if __name__ == "__main__":
     for do_sampling in [False]:
         for model_name, model_class, architecture_params in MODELS:
             is_res_net = "ResNet" in model_name
+            logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
                 dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
