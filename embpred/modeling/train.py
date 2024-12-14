@@ -63,7 +63,8 @@ if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
-        ("BiggerrNet3D224-resample", BiggerNet3D224, {})
+        ("BiggerrNet3D224-resample", BiggerNet3D224, {}),
+        ("SmallerNet3D224-resample", SmallerNet3D224, {})
     ]
 
     KFOLDS = 8
