@@ -67,7 +67,7 @@ if __name__ == "__main__":
     ]
 
     KFOLDS = 8
-    EPOCHS = 50
+    EPOCHS = 100
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
