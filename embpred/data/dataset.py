@@ -100,6 +100,7 @@ def get_transforms(image_net_transforms = False):
         transforms = v2.Compose([
             v2.RandomHorizontalFlip(p=0.5),
             v2.RandomVerticalFlip(p=0.5),
+            #v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
             # add my custom transform
             v2.RandomApply([ShuffleColor()], p=0.5)
         ])
@@ -109,7 +110,7 @@ def get_transforms(image_net_transforms = False):
 def get_basic_transforms():
     return v2.Compose([
         v2.RandomHorizontalFlip(p=0.5),
-        v2.RandomVerticalFlip(p=0.5),
+        v2.RandomVerticalFlip(p=0.5)
     ])
 
 

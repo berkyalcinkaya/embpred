@@ -119,6 +119,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     for i in range(epochs):
         
         if do_early_stop and num_epochs_since_improvement >= early_stop_epochs:
+            logger.info(f"Early stopping at epoch {i}")
             break
         
         loss_all = 0
