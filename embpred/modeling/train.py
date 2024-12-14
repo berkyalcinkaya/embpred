@@ -72,6 +72,7 @@ if __name__ == "__main__":
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = 500
+    DO_REBALANCE = False
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
@@ -117,11 +118,16 @@ if __name__ == "__main__":
                     writer = SummaryWriter(log_dir=log_dir)
                     train_ims, train_labels, val_ims, val_labels = fold
 
-                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=True, transforms=get_basic_transforms(),
-                                            aug_dir= INTERIM_DATA_DIR / "aug")
-                    balancer.print_before_and_after()
-                        
-                    train_data = CustomImageDataset(balancer.balanced_img_paths(), balancer.balanced_labels(), 
+                    if DO_REBALANCE:
+                        balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                                                aug_dir= INTERIM_DATA_DIR / "aug")
+                        balancer.print_before_and_after()
+                        train_ims_new = balancer.balanced_img_paths()
+                        train_labels_new = balancer.balanced_labels()
+                    else:
+                        train_ims_new, train_labels_new = train_ims, train_labels
+                    
+                    train_data = CustomImageDataset(train_ims_new, train_labels_new, 
                                                     img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
 
                     val_data = CustomImageDataset(val_ims, val_labels, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
