@@ -25,6 +25,7 @@ import csv
 # write code to ensure that pytorch caches are cleared and that the GPU memory is freed up
 torch.cuda.empty_cache()
 
+# TODO: before the split, randomly sample to lower class frequencies (500). Then split inot train test validation
 
 MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 
@@ -36,11 +37,33 @@ model_mappings =  {
     "SmallerNet3D224": SmallerNet3D224
 }
 
+def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
+    class_counts = {}
+    for label in labels:
+        class_counts[label] = class_counts.get(label, 0) + 1
+    logger.info(f"PRE-SAMPLING: {class_counts}")
+    for label, count in class_counts.items():
+        if count < PRE_RANDOM_SAMPLE:
+            logger.info(f"Class {label} has {count} images, sampling all")
+        else:
+            logger.info(f"Class {label} has {count} images, sampling {PRE_RANDOM_SAMPLE}")
+    sampled_files, sampled_labels = [], []
+    for label in np.unique(labels):
+        label_files = [f for f, l in zip(files, labels) if l == label]
+        sampled_files.extend(np.random.choice(label_files, PRE_RANDOM_SAMPLE, replace=False))
+        sampled_labels.extend([label] * PRE_RANDOM_SAMPLE)
+    files, labels = sampled_files, sampled_labels
+    class_counts = {}
+    for label in labels:
+        class_counts[label] = class_counts.get(label, 0) + 1
+    logger.info(f"POST-SAMPLING: {class_counts}")
+    return files,labels
+
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
-        ("SmallerNet3D224-full-balance", SmallerNet3D224, {})
+        #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
+        ("BiggerrNet3D224-resample", BiggerNet3D224, {})
     ]
 
     KFOLDS = 8
@@ -48,6 +71,7 @@ if __name__ == "__main__":
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
+    PRE_RANDOM_SAMPLE = 500
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
@@ -59,6 +83,14 @@ if __name__ == "__main__":
             logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
             for dataset in datasets:
                 files, labels = get_data_from_dataset_csv(dataset)
+
+                if PRE_RANDOM_SAMPLE:
+                    # from each class, randomly sample PRE_RANDOM_SAMPLE images
+                    # if a class has less than PRE_RANDOM_SAMPLE images, sample all, 
+                    # print out the number of images per class, and if the class has less than PRE_RANDOM_SAMPLE
+                    logger.info(f"PRE-SAMPLING: {PRE_RANDOM_SAMPLE}")
+                    files, labels = do_random_sample(PRE_RANDOM_SAMPLE, files, labels)
+
                 dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
                 logger.info(f"DATASET {dataset} | NUM CLASSES: {num_classes}")
 
@@ -114,7 +146,7 @@ if __name__ == "__main__":
                     logger.info(f"BEST WEIGHTS: {model_save_path}")
             
                     val_micro, val_auc, val_macro, val_losses = train_and_evaluate(model, train_loader, val_loader, 
-                                                                       optimizer, device, criterion, False, 5, 10,
+                                                                       optimizer, device, criterion, False, 1, 1,
                                                                        EPOCHS, writer, best_model_path=model_save_path, 
                                                                        class_names=class_names_by_label, early_stop_epochs=20, 
                                                                        do_early_stop=True)
