@@ -62,13 +62,12 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
+        ("BiggerrNet3D224-resample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
-        ("BiggerrNet3D224-resample", BiggerNet3D224, {}),
-        ("SmallerNet3D224-resample", SmallerNet3D224, {})
     ]
 
-    KFOLDS = 8
-    EPOCHS = 100
+    KFOLDS = 10
+    EPOCHS = 3
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
@@ -157,6 +156,8 @@ if __name__ == "__main__":
                                                                        EPOCHS, writer, best_model_path=model_save_path, 
                                                                        class_names=class_names_by_label, early_stop_epochs=20, 
                                                                        do_early_stop=True)
+                    # load best model and evaluate
+                    model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
                     val_micro, val_aucs, val_macro, avg_loss, conf_mat = evaluate(model, device, val_loader, loss=criterion, get_conf_mat=True)
                     val_auc=np.mean(val_aucs)
                     
@@ -172,6 +173,7 @@ if __name__ == "__main__":
                     if DO_REBALANCE:
                         balancer.delete_augmentation()
                         del balancer
+                    
                     del model, optimizer, criterion, train_loader, val_loader, train_data, val_data
                 
                 ### END of kFolds: Record model performance
