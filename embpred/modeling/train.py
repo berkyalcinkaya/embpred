@@ -107,6 +107,7 @@ if __name__ == "__main__":
                 # train model over k-folds, record performance
                 accs, aucs, macros, losses = [], [], [], []
                 conf_mats = np.zeros((num_classes, num_classes))
+
                 k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
                 for idx, fold in enumerate(k_fold_splits):
                     # free up memory for new fold with pytorch
