@@ -62,12 +62,12 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("BiggerrNet3D224-resample-test", BiggerNet3D224, {})
+        ("BiggerrNet3D224-resample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
     KFOLDS = 10
-    EPOCHS = 3
+    EPOCHS = 100
     LR = 0.001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
