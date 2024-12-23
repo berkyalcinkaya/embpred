@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
-from embpred.modeling.models import (SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
+from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
                                     BiggerNet3D224, SmallerNet3D224)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, load_mappings, get_class_names_by_label, 
@@ -62,13 +62,14 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("BiggerrNet3D224-resample", BiggerNet3D224, {})
+        ("BiggerNet3D224-resample", BiggerNet3D224, {}),
+        ("BiggestNet3D224-resample", BiggestNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
     KFOLDS = 10
     EPOCHS = 100
-    LR = 0.001
+    LR = 0.001 
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = 500
