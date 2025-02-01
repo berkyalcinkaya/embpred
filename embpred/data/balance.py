@@ -18,7 +18,7 @@ class DataBalancer:
         img_paths: List[str],
         img_labels: List[int],
         T: Optional[int] = None,
-        quartile: float = 0.75,
+        quartile: Optional[float] = 0.75,
         transforms: Optional[Callable] = None,
         oversample: bool = True,
         undersample: bool = True,
@@ -40,17 +40,10 @@ class DataBalancer:
         assert len(img_paths) == len(img_labels), "img_paths and img_labels must be the same length."
         self.original_img_paths = img_paths
         self.original_img_labels = img_labels
+        self.T = T
         self.transforms = transforms
         self.oversample = oversample
         self.undersample = undersample
-
-        # Calculate T if not provided
-        if T is None:
-            class_counts = self._calculate_class_counts(img_labels)
-            self.T = int(np.percentile(list(class_counts.values()), quartile * 100))
-            logger.info(f"Calculated target number of images per class (T) at {quartile} quartile: {self.T}")
-        else:
-            self.T = T
 
         # Determine augmentation directory
         if aug_dir is None:
@@ -62,6 +55,26 @@ class DataBalancer:
         logger.info(f"Augmentation directory: {self.aug_dir}")
         os.makedirs(self.aug_dir, exist_ok=True)
 
+        # Organize images by class
+        self.class_to_imgs = {}
+        for path, label in zip(self.original_img_paths, self.original_img_labels):
+            if label not in self.class_to_imgs:
+                self.class_to_imgs[label] = []
+            self.class_to_imgs[label].append(path)
+        
+        # Calculate T if not provided
+        if T is None:
+            class_counts = self._calculate_class_counts(img_labels)
+            self.T = int(np.percentile(list(class_counts.values()), quartile * 100))
+            logger.info(f"Calculated target number of images per class (T) at {quartile} quartile: {self.T}")
+        else:
+            self.T = T
+
+        # Perform balancing
+        self.balanced_class_to_imgs = {}
+        self.balanced_class_to_labels = {}
+        self._balance()
+    
     def _calculate_class_counts(self, labels: List[int]) -> dict:
         """
         Calculate the number of images per class.
