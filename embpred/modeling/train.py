@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
             #k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
             k_fold_splits = []
-            k_fold_splits_by_embryo = kfold_split(embryo_names_to_files.keys(), n_splits=KFOLDS)
+            k_fold_splits_by_embryo = kfold_split(list(embryo_names_to_files.keys()), n_splits=KFOLDS)
             for train_embryos, val_embryos in k_fold_splits_by_embryo:
                 train_files, train_labels = [], []
                 for embryo in train_embryos:
