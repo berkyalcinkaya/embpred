@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 files, labels = do_random_sample(PRE_RANDOM_SAMPLE, files, labels)
 
             dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
-            logger.info(f"DATASET {dataset} | NUM CLASSES: {num_classes}")
+            #logger.info(f"DATASET {dataset} | NUM CLASSES: {num_classes}")
 
             mapping = mappings[dataset.split("_")[0]]
             class_names_by_label = get_class_names_by_label(mapping)
@@ -155,7 +155,9 @@ if __name__ == "__main__":
                 train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
                 val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, num_workers=4)
 
-                model = model_class(num_classes=train_data.get_num_classes(), **architecture_params)
+                new_num_classes = train_data.get_num_classes()
+                logger.info(f"NUM CLASSES: {new_num_classes}")
+                model = model_class(num_classes=new_num_classes, **architecture_params)
                 param_count = count_parameters(model)
                 logger.info(f"{str(model)}")
                 logger.info(f"Model parameters: {param_count}")
