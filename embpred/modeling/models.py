@@ -210,7 +210,7 @@ class SimpleNet3D(nn.Module):
         self.pool = nn.MaxPool2d(2, 2)
         
         # Fully connected layers with updated sizes based on input image size (3x800x800)
-        self.fc1 = nn.Linear(16 * 197 * 197, 120)  # Input size is calculated from conv layers
+        self.fc1 = nn.Linear(16 * 53 * 53, 120)  # Input size is calculated from conv layers
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, num_classes)
 
