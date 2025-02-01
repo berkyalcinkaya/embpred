@@ -68,7 +68,7 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
-    KFOLDS = 10
+    KFOLDS = 8
     EPOCHS = 100
     LR = 0.001 
     WEIGHT_DECAY = 0.0001
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
-    
+
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_carson-224-3depths*.csv"))
