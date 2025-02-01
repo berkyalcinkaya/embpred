@@ -194,12 +194,18 @@ class SmallerNet3D224(nn.Module):
         return x
 
 class SimpleNet3D(nn.Module):
-    def __init__(self, num_classes=10):  # You can specify the number of classes here
+    def __init__(self, num_classes=10, batchNorm=False):  # You can specify the number of classes here
         super(SimpleNet3D, self).__init__()
         # Define the first convolutional layer: 3 input channels, 6 output channels, 5x5 kernel
         self.conv1 = nn.Conv2d(3, 6, 5)
+        # Define the first batch normalization layer
+        self.bn1 = nn.BatchNorm2d(6) if batchNorm else nn.Identity()
+        
         # Define the second convolutional layer: 6 input channels, 16 output channels, 5x5 kernel
         self.conv2 = nn.Conv2d(6, 16, 5)
+        # Define the second batch normalization layer
+        self.bn2 = nn.BatchNorm2d(16) if batchNorm else nn.Identity()
+        
         # Define a max pooling layer with 2x2 kernel
         self.pool = nn.MaxPool2d(2, 2)
         
@@ -209,10 +215,10 @@ class SimpleNet3D(nn.Module):
         self.fc3 = nn.Linear(84, num_classes)
 
     def forward(self, x):
-        # Apply the first convolution, ReLU, and max pooling
-        x = self.pool(F.relu(self.conv1(x)))
-        # Apply the second convolution, ReLU, and max pooling
-        x = self.pool(F.relu(self.conv2(x)))
+        # Apply the first convolution, batch norm, ReLU, and max pooling
+        x = self.pool(F.relu(self.bn1(self.conv1(x))))
+        # Apply the second convolution, batch norm, ReLU, and max pooling
+        x = self.pool(F.relu(self.bn2(self.conv2(x))))
         # Flatten the tensor for the fully connected layers
         x = torch.flatten(x, 1)  # Flatten all dimensions except batch
         # Apply fully connected layers with ReLU activations

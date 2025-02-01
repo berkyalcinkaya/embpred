@@ -63,7 +63,8 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
+        ("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
+        #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
-
+    
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_carson-224-3depths*.csv"))
@@ -139,7 +140,7 @@ if __name__ == "__main__":
 
                 if DO_REBALANCE:
                     balancer = DataBalancer(train_ims, train_labels, T=2000, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
-                                            aug_dir= INTERIM_DATA_DIR / "aug", oversample=False)
+                                            aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()
                     train_labels_new = balancer.balanced_labels()
