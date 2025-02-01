@@ -17,6 +17,29 @@ from embpred.data.my_transforms import ShuffleColor
 plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision import transforms as v2
 
+def get_embryo_names_by_from_files(files, labels):
+    embryo_names_to_files = {}
+    embryo_names_to_count = {}
+    embryo_names_to_labels = {}
+
+    for file, label in zip(files, labels):
+        embryo_name = get_filename_no_ext(file).rsplit('_', 1)[0]
+
+        if embryo_name not in embryo_names_to_files:
+            embryo_names_to_files[embryo_name] = []
+        embryo_names_to_files[embryo_name].append(file)
+
+        if embryo_name not in embryo_names_to_count:
+            embryo_names_to_count[embryo_name] = 0
+        embryo_names_to_count[embryo_name] += 1
+
+        if embryo_name not in embryo_names_to_labels:
+            embryo_names_to_labels[embryo_name] = []
+        embryo_names_to_labels[embryo_name].append(label)
+
+    return embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels
+
+
 def get_class_names_by_label(mapping_dict)->dict:
     label_ints = mapping_dict.values()
     class_name_dict = {}
