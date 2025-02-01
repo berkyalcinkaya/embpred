@@ -117,7 +117,7 @@ class BiggerNet3D224(nn.Module):
     
 class BiggestNet3D224(nn.Module):
     def __init__(self, num_classes=10):
-        super(BiggerNet3D224, self).__init__()
+        super(BiggestNet3D224, self).__init__()
         # Convolutional layers
         self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
         self.bn1 = nn.BatchNorm2d(16)

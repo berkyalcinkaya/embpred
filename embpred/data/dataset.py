@@ -1,6 +1,6 @@
 from torchvision.transforms import v2, ToTensor, Lambda
 import pandas as pd
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold, train_test_split, KFold
 import numpy as np
 from PIL import Image
 import json
@@ -87,6 +87,43 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
     
     return splits
 
+def kfold_split(strings, n_splits=5, random_state=None, test_size=0.25):
+    """
+    Perform k-fold split on a list of strings.
+
+    Parameters:
+    strings (list): List of strings to be split.
+    n_splits (int): Number of folds. Default is 5.
+    random_state (int or None): Random state for reproducibility. Default is None.
+
+    Returns:
+    List of tuples: Each tuple contains two lists (train_strings, test_strings) for each fold.
+                    If n_splits < 2, returns a single train-test split.
+    """
+    # Ensure we have a non-empty list of strings
+    assert len(strings) > 0, "The list of strings must not be empty."
+    
+    if n_splits < 2:
+        # Perform a single train-test split
+        train_strings, test_strings = train_test_split(
+            strings, test_size=test_size, random_state=random_state
+        )
+        return [(train_strings, test_strings)]
+    
+    # Initialize KFold
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+    
+    # List to store train-test splits
+    splits = []
+    
+    # Perform the splits
+    for train_index, test_index in kf.split(strings):
+        train_strings = [strings[i] for i in train_index]
+        test_strings = [strings[i] for i in test_index]
+        splits.append((train_strings, test_strings))
+    
+    return splits
+
 
 def get_transforms(image_net_transforms = False):
     if image_net_transforms:
@@ -100,8 +137,7 @@ def get_transforms(image_net_transforms = False):
         transforms = v2.Compose([
             v2.RandomHorizontalFlip(p=0.5),
             v2.RandomVerticalFlip(p=0.5),
-            #v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
-            # add my custom transform
+            v2.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0)),
             v2.RandomApply([ShuffleColor()], p=0.5)
         ])
     
