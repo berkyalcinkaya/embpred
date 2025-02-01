@@ -63,8 +63,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("BiggerNet3D224-resample", BiggerNet3D224, {}),
-        ("BiggestNet3D224-resample", BiggestNet3D224, {})
+        ("BiggerNet3D224-emb-kfolds", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     LR = 0.001 
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
-    PRE_RANDOM_SAMPLE = 500
+    PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
 
@@ -139,7 +138,7 @@ if __name__ == "__main__":
                 train_ims, train_labels, val_ims, val_labels = fold
 
                 if DO_REBALANCE:
-                    balancer = DataBalancer(train_ims, train_labels, T=5000, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                    balancer = DataBalancer(train_ims, train_labels, T=None, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()

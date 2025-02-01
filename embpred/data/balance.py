@@ -16,7 +16,8 @@ class DataBalancer:
         self,
         img_paths: List[str],
         img_labels: List[int],
-        T: int,
+        T: Optional[int] = None,
+        quartile: float = 0.75,
         transforms: Optional[Callable] = None,
         oversample: bool = True,
         undersample: bool = True,
@@ -28,7 +29,8 @@ class DataBalancer:
         Parameters:
         - img_paths (List[str]): List of image file paths.
         - img_labels (List[int]): Corresponding list of labels.
-        - T (int): Target number of images per class.
+        - T (int, optional): Target number of images per class. If None, it will be calculated based on the specified quartile.
+        - quartile (float): The quartile to use for calculating T if T is None. Default is 0.75.
         - transforms (Callable, optional): Transformations to apply for augmentation.
         - oversample (bool): Whether to perform oversampling.
         - undersample (bool): Whether to perform undersampling.
@@ -37,10 +39,17 @@ class DataBalancer:
         assert len(img_paths) == len(img_labels), "img_paths and img_labels must be the same length."
         self.original_img_paths = img_paths
         self.original_img_labels = img_labels
-        self.T = T
         self.transforms = transforms
         self.oversample = oversample
         self.undersample = undersample
+
+        # Calculate T if not provided
+        if T is None:
+            class_counts = self._calculate_class_counts(img_labels)
+            self.T = int(np.percentile(list(class_counts.values()), quartile * 100))
+            logger.info(f"Calculated target number of images per class (T) at {quartile} quartile: {self.T}")
+        else:
+            self.T = T
 
         # Determine augmentation directory
         if aug_dir is None:
@@ -52,17 +61,23 @@ class DataBalancer:
         logger.info(f"Augmentation directory: {self.aug_dir}")
         os.makedirs(self.aug_dir, exist_ok=True)
 
-        # Organize images by class
-        self.class_to_imgs = {}
-        for path, label in zip(self.original_img_paths, self.original_img_labels):
-            if label not in self.class_to_imgs:
-                self.class_to_imgs[label] = []
-            self.class_to_imgs[label].append(path)
+    def _calculate_class_counts(self, labels: List[int]) -> dict:
+        """
+        Calculate the number of images per class.
 
-        # Perform balancing
-        self.balanced_class_to_imgs = {}
-        self.balanced_class_to_labels = {}
-        self._balance()
+        Parameters:
+        - labels (List[int]): List of labels.
+
+        Returns:
+        - dict: Dictionary with class labels as keys and counts as values.
+        """
+        class_counts = {}
+        for label in labels:
+            if label in class_counts:
+                class_counts[label] += 1
+            else:
+                class_counts[label] = 1
+        return class_counts
 
     def _balance(self):
         for label, imgs in tqdm(self.class_to_imgs.items()):
