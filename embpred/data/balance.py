@@ -9,6 +9,7 @@ import torch
 from torchvision.io import read_image
 from loguru import logger
 from tqdm import tqdm
+import numpy as np
 from skimage.io import imsave
 
 class DataBalancer:
