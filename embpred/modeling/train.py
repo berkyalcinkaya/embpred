@@ -1,6 +1,7 @@
 from itertools import count
 from platform import architecture
 from loguru import logger
+from requests import get
 from tqdm import tqdm
 import numpy as np
 #import pandas as pd
@@ -21,6 +22,7 @@ from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_
 from embpred.data.balance import DataBalancer
 from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
 from embpred.modeling.utils import report_kfolds_results
+from embpred.modeling.loss import get_class_weights, weighted_cross_entropy_loss
 import csv
 
 # write code to ensure that pytorch caches are cleared and that the GPU memory is freed up
@@ -76,6 +78,7 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
+    criterion = get_class_weights(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
@@ -166,7 +169,6 @@ if __name__ == "__main__":
                 logger.info(f"Loaded model to {device}")
                 
                 optimizer = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
-                criterion = nn.CrossEntropyLoss()
                 
                 model_save_path = os.path.join(log_dir, "model.pth")
                 logger.info(f"BEST WEIGHTS: {model_save_path}")
