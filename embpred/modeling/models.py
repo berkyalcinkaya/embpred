@@ -90,12 +90,18 @@ class WNet(nn.Module):
         dropout (bool): Whether to use dropout in the fully connected layers.
         dropout_rate (float): Dropout rate (probability of an element to be zeroed) if dropout is enabled.
     """
-    def __init__(self, num_classes=12, dropout=False, dropout_rate=0.5):
+    def __init__(self, num_classes=12, dropout=False, dropout_rate=0.5, do_xavier=True):
         super(WNet, self).__init__()
         # Convolutional layers; using padding=1 keeps spatial size same when using 3x3 kernels.
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, )
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+
+        if do_xavier:
+            # Initialize weights using Xavier initialization
+            nn.init.xavier_normal_(self.conv1.weight)
+            nn.init.xavier_normal_(self.conv2.weight)
+            nn.init.xavier_normal_(self.conv3.weight)
         
         # 3 successive 2x2 pooling operations:
         # 224 -> 112 -> 56 -> 28
@@ -104,7 +110,7 @@ class WNet(nn.Module):
         # Fully connected layers
         # Flattened feature size = 128 * 28 * 28
         self.fc1 = nn.Linear(64 * 28 * 28, 256)
-        self.fc2 = nn.Linear(256, num_classes)
+        self.fc2 = nn.Linear(256, num_classes, )
         
         # Dropout layer or identity based on input flag
         self.dropout = nn.Dropout(dropout_rate) if dropout else nn.Identity()
