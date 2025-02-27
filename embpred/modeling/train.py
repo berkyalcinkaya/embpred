@@ -76,7 +76,7 @@ if __name__ == "__main__":
     EPOCHS = 50
     LR = 0.0001
     WEIGHT_DECAY = 0#s.0001
-    BATCH_SIZE = 32
+    BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
