@@ -30,7 +30,7 @@ class BigWNet(nn.Module):
         dropout_rate (float): Dropout rate (probability of an element to be zeroed) if dropout is enabled.
     """
     def __init__(self, num_classes=12, dropout=False, dropout_rate=0.5):
-        super(WNet, self).__init__()
+        super(BigWNet, self).__init__()
         # Convolutional layers; using padding=1 keeps spatial size same when using 3x3 kernels.
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
