@@ -65,17 +65,17 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        #("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5}),
-        ("BigWnet-embSplits", WNet, {"dropout":False}),
-        ("BigWnet-drop-embSplits", WNet, {"dropout":True, "dropout_rate":0.5})
+        ("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5}),
+        #("BigWnet-embSplits", BigWNet, {"dropout":False}),
+        #("BigWnet-drop-embSplits", BigWNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
     KFOLDS = 1
     EPOCHS = 50
-    LR = 0.001 
-    WEIGHT_DECAY = 0.0001
+    LR = 0.001
+    WEIGHT_DECAY = 0#0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
