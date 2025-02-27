@@ -103,8 +103,8 @@ class WNet(nn.Module):
         
         # Fully connected layers
         # Flattened feature size = 128 * 28 * 28
-        self.fc1 = nn.Linear(64 * 28 * 28, 1024)
-        self.fc2 = nn.Linear(1024, num_classes)
+        self.fc1 = nn.Linear(64 * 28 * 28, 256)
+        self.fc2 = nn.Linear(256, num_classes)
         
         # Dropout layer or identity based on input flag
         self.dropout = nn.Dropout(dropout_rate) if dropout else nn.Identity()
@@ -126,12 +126,6 @@ class WNet(nn.Module):
         
         return x
 
-# Example usage:
-if __name__ == "__main__":
-    model = WNet(num_classes=12, dropout=True, dropout_rate=0.5)
-    sample_input = torch.randn(1, 3, 224, 224)
-    output = model(sample_input)
-    print("Output probabilities:", output)
 
 
 class FirstNet2D(nn.Module):
