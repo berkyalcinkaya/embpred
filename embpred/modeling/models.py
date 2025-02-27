@@ -7,6 +7,66 @@ from collections import OrderedDict
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
 
+class BigWNet(nn.Module):
+    """
+    W-Net implementation for image classification, adapted for 224 x 224 x 3 inputs.
+    
+    Architecture:
+        1. Input layer: 224x224x3
+        2. Convolutional Layer 1: 32 filters, 3x3 kernel, padding=1, ReLU activation
+           followed by MaxPooling (2x2)
+        3. Convolutional Layer 2: 64 filters, 3x3 kernel, padding=1, ReLU activation
+           followed by MaxPooling (2x2)
+        4. Convolutional Layer 3: 128 filters, 3x3 kernel, padding=1, ReLU activation
+           followed by MaxPooling (2x2)
+        5. Flatten layer
+        6. Fully connected Layer 1: 256 units, ReLU activation and optional Dropout
+        7. Fully connected Layer 2: 128 units, ReLU activation and optional Dropout
+        8. Output Layer: num_classes units with softmax activation
+        
+    Parameters:
+        num_classes (int): Number of output classes.
+        dropout (bool): Whether to use dropout in the fully connected layers.
+        dropout_rate (float): Dropout rate (probability of an element to be zeroed) if dropout is enabled.
+    """
+    def __init__(self, num_classes=12, dropout=False, dropout_rate=0.5):
+        super(WNet, self).__init__()
+        # Convolutional layers; using padding=1 keeps spatial size same when using 3x3 kernels.
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        
+        # 3 successive 2x2 pooling operations:
+        # 224 -> 112 -> 56 -> 28
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # Fully connected layers
+        # Flattened feature size = 128 * 28 * 28
+        self.fc1 = nn.Linear(64 * 28 * 28, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, num_classes)
+        
+        # Dropout layer or identity based on input flag
+        self.dropout = nn.Dropout(dropout_rate) if dropout else nn.Identity()
+
+    def forward(self, x):
+        # Convolution block 1
+        x = self.pool(F.relu(self.conv1(x)))  # Output: [batch, 32, 112, 112]
+        # Convolution block 2
+        x = self.pool(F.relu(self.conv2(x)))  # Output: [batch, 64, 56, 56]
+        # Convolution block 3
+        x = self.pool(F.relu(self.conv3(x)))  # Output: [batch, 128, 28, 28]
+        
+        # Flatten for fully connected layers
+        x = torch.flatten(x, 1)
+        
+        # Fully connected layers with dropout if enabled
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.dropout(F.relu(self.fc2(x)))
+        
+        return x
+
+
 class WNet(nn.Module):
     """
     W-Net implementation for image classification, adapted for 224 x 224 x 3 inputs.

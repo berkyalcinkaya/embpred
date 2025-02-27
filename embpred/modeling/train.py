@@ -14,7 +14,7 @@ import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
-                                    BiggerNet3D224, SmallerNet3D224, WNet)
+                                    BiggerNet3D224, SmallerNet3D224, WNet, BigWNet)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, kfold_split,
                             load_mappings, get_class_names_by_label, 
@@ -65,13 +65,14 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        #("Wnet-224-emb-kfolds", WNet, {"dropout":True, "dropout_rate":0.5})
-        ("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
+        ("Wnet-224-emb-kfolds", WNet, {"dropout":False, "dropout_rate":0.5}),
+        ("BigWnet-224-emb-kfolds", WNet, {"dropout":False}),
+        ("BigWnet-drop-224-emb-kfolds", WNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
-    KFOLDS = 5
+    KFOLDS = 1
     EPOCHS = 100
     LR = 0.001 
     WEIGHT_DECAY = 0.0001
