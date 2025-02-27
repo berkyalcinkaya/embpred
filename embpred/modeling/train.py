@@ -65,7 +65,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5}),
+        #("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5}),
         ("BigWnet-embSplits", WNet, {"dropout":False}),
         ("BigWnet-drop-embSplits", WNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
@@ -80,12 +80,14 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
-    criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
     datasets = [PROCESSED_DATA_DIR / "noEmpty_carson-224-3depths.csv"] # dataset prefixes determines which mapping to use
     for model_name, model_class, architecture_params in MODELS:
+        criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
