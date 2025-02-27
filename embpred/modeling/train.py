@@ -14,7 +14,7 @@ import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
-                                    BiggerNet3D224, SmallerNet3D224)
+                                    BiggerNet3D224, SmallerNet3D224, WNet)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, kfold_split,
                             load_mappings, get_class_names_by_label, 
@@ -65,12 +65,13 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
+        ("Wnet-224-emb-kfolds", WNet, {"dropout":True, "dropout_rate":0.5})
+        #("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
-    KFOLDS = 8
+    KFOLDS = 5
     EPOCHS = 100
     LR = 0.001 
     WEIGHT_DECAY = 0.0001
@@ -78,7 +79,7 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
     classes_to_drop = [13]
-    criterion = get_class_weights(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+    criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
@@ -91,8 +92,6 @@ if __name__ == "__main__":
 
             embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
             logger.info(f"# EMBRYOS: {len(embryo_names_to_files)}")
-
-
 
             if PRE_RANDOM_SAMPLE:
                 # from each class, randomly sample PRE_RANDOM_SAMPLE images
