@@ -63,6 +63,7 @@ class BigWNet(nn.Module):
         # Fully connected layers with dropout if enabled
         x = self.dropout(F.relu(self.fc1(x)))
         x = self.dropout(F.relu(self.fc2(x)))
+        x = self.dropout(F.relu(self.fc3(x)))
         
         return x
 
