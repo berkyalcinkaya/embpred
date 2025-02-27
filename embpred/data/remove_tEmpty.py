@@ -22,4 +22,4 @@ print(len(df))
 print(df.iloc[:, 1].value_counts())
 
 # save the dataframe to a new csv file
-df.to_csv(PROCESSED_DATA_DIR / 'all-classes_carson-224-3depths_no13.csv', index=False)
+df.to_csv(PROCESSED_DATA_DIR / 'noTEmpty_carson-224-3depths.csv', index=False)
