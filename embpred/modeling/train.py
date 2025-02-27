@@ -65,8 +65,8 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("Wnet-224-emb-kfolds", WNet, {"dropout":True, "dropout_rate":0.5})
-        #("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
+        #("Wnet-224-emb-kfolds", WNet, {"dropout":True, "dropout_rate":0.5})
+        ("SimpleNet3D-224-emb-kfolds-batchNorm", SimpleNet3D, {"batchNorm": True})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = [PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"]
+    datasets = [PROCESSED_DATA_DIR / "noEmpty_carson-224-3depths.csv"] # dataset prefixes determines which mapping to use
     for model_name, model_class, architecture_params in MODELS:
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
@@ -119,14 +119,12 @@ if __name__ == "__main__":
             for train_embryos, val_embryos in k_fold_splits_by_embryo:
                 train_files, train_labels = [], []
                 for embryo in train_embryos:
-                    if embryo_names_to_labels[embryo] not in classes_to_drop:
-                        train_files.extend(embryo_names_to_files[embryo])
-                        train_labels.extend(embryo_names_to_labels[embryo])
+                    train_files.extend(embryo_names_to_files[embryo])
+                    train_labels.extend(embryo_names_to_labels[embryo])
                 val_files, val_labels = [], []
                 for embryo in val_embryos:
-                    if embryo_names_to_labels[embryo] not in classes_to_drop:
-                        val_files.extend(embryo_names_to_files[embryo])
-                        val_labels.extend(embryo_names_to_labels[embryo])
+                    val_files.extend(embryo_names_to_files[embryo])
+                    val_labels.extend(embryo_names_to_labels[embryo])
                 k_fold_splits.append((train_files, train_labels, val_files, val_labels))
 
 
