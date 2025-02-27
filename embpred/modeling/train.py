@@ -143,7 +143,7 @@ if __name__ == "__main__":
                 train_ims, train_labels, val_ims, val_labels = fold
 
                 if DO_REBALANCE:
-                    balancer = DataBalancer(train_ims, train_labels, T=2000, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                    balancer = DataBalancer(train_ims, train_labels, T=1000, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()
