@@ -99,9 +99,9 @@ class WNet(nn.Module):
 
         if do_xavier:
             # Initialize weights using Xavier initialization
-            nn.init.xavier_normal_(self.conv1.weight)
-            nn.init.xavier_normal_(self.conv2.weight)
-            nn.init.xavier_normal_(self.conv3.weight)
+            nn.init.xavier_uniform_(self.conv1.weight)
+            nn.init.xavier_uniform_(self.conv2.weight)
+            nn.init.xavier_uniform_(self.conv3.weight)
         
         # 3 successive 2x2 pooling operations:
         # 224 -> 112 -> 56 -> 28
