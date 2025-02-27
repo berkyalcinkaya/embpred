@@ -78,12 +78,12 @@ if __name__ == "__main__":
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
-    classes_to_drop = [13]
+    classes_to_drop = []
     criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_carson-224-3depths*.csv"))
+    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_carson-224-3depths_no13*.csv"))
     for model_name, model_class, architecture_params in MODELS:
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
