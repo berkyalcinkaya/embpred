@@ -78,12 +78,12 @@ if __name__ == "__main__":
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
-    classes_to_drop = []
+    classes_to_drop = [13]
     criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = glob(str(PROCESSED_DATA_DIR / "all-classes_carson-224-3depths_no13*.csv"))
+    datasets = [PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"]
     for model_name, model_class, architecture_params in MODELS:
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
@@ -128,6 +128,7 @@ if __name__ == "__main__":
                         val_files.extend(embryo_names_to_files[embryo])
                         val_labels.extend(embryo_names_to_labels[embryo])
                 k_fold_splits.append((train_files, train_labels, val_files, val_labels))
+
 
 
             for idx, fold in enumerate(k_fold_splits):
