@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
     KFOLDS = 1
     EPOCHS = 50
-    LR = 0.0001
+    LR = 0.00001
     WEIGHT_DECAY = 0#s.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
