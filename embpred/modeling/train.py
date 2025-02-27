@@ -65,7 +65,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5}),
+        ("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5})
         #("BigWnet-embSplits", BigWNet, {"dropout":False})
         #("BigWnet-drop-embSplits", BigWNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
