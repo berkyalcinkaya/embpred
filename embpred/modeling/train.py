@@ -87,7 +87,7 @@ if __name__ == "__main__":
     device = get_device()
     datasets = [PROCESSED_DATA_DIR / "noEmpty_carson-224-3depths.csv"] # dataset prefixes determines which mapping to use
     for model_name, model_class, architecture_params in MODELS:
-        criterion = weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], device, weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
