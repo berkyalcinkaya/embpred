@@ -65,7 +65,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("SimpleNet3D-moreDecay-embSplits", SimpleNet3D, {})
+        ("SimpleNet3D-weightLoss-embSplits", SimpleNet3D, {})
         #("Wnet-embSplits", WNet, {"dropout":False, "dropout_rate":0.5})
         #("BigWnet-embSplits", BigWNet, {"dropout":False})
         #("BigWnet-drop-embSplits", BigWNet, {"dropout":True, "dropout_rate":0.5})
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     KFOLDS = 1
     EPOCHS = 50
     LR = 0.001
-    WEIGHT_DECAY = 0.001
+    WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     device = get_device()
     datasets = [PROCESSED_DATA_DIR / "noEmpty_carson-224-3depths.csv"] # dataset prefixes determines which mapping to use
     for model_name, model_class, architecture_params in MODELS:
-        criterion = nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
