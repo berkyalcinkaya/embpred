@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
         #("SimpleNet3D-weightLoss-embSplits", SimpleNet3D, {})
-        ("Wnet-weight-embSplits", WNet, {"dropout":False, "dropout_rate":0.5})
+        ("Wnet-weight-lowerLR-embSplits", WNet, {"dropout":False, "dropout_rate":0.5})
         #("BigWnet-embSplits", BigWNet, {"dropout":False})
         #("BigWnet-drop-embSplits", BigWNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     KFOLDS = 1
     EPOCHS = 50
-    LR = 0.0001
+    LR = 0.00001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
