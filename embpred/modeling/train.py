@@ -69,7 +69,7 @@ if __name__ == "__main__":
         #("Wnet-weight-noXaiver-embSplits", WNet, {"dropout":False, "dropout_rate":0.5, "do_xavier":False})
         #("BigWnet-embSplits", BigWNet, {"dropout":False})
         ("ResNet50-weightLoss-2layer-embSplits", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64], "input_shape": (3, 224, 224)}),
-        ("CustomResNet18-1layer-embSplits", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
+        ("ResNet50-weightLoss-1layer-embSplits", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
         ("Wnet-drop-weightLoss-drop-embSplits", WNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
