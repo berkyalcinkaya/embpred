@@ -425,7 +425,8 @@ class CustomResNet50(nn.Module):
         num_ftrs = self.resnet.fc.in_features  # In ResNet-50, this is 2048
         self.resnet.fc = nn.Identity()  # Replace the final fc layer with an identity layer
 
-        # If a single integer is provided, apply it to all dense layers
+
+        # If a single integer is provided for dense_neurons, replicate it for all dense layers
         if isinstance(dense_neurons, int):
             dense_neurons = [dense_neurons] * num_dense_layers
 
@@ -433,13 +434,17 @@ class CustomResNet50(nn.Module):
         layers = []
         input_size = num_ftrs
         for i, neurons in enumerate(dense_neurons):
-            layers.append(('fc{}'.format(i + 1), nn.Linear(input_size, neurons)))
-            layers.append(('relu{}'.format(i + 1), nn.ReLU(inplace=True)))
-            layers.append(('dropout{}'.format(i + 1), nn.Dropout(0.5)))
-            input_size = neurons
-        layers.append(('fc_final', nn.Linear(input_size, num_classes)))  # Final output layer, no softmax
-        
-        self.classifier = nn.Sequential(*[nn.Sequential(layer) for layer in layers])
+            layers.append(nn.Linear(input_size, neurons))  # Fully connected layer
+            layers.append(nn.ReLU(inplace=True))          # ReLU activation
+            layers.append(nn.Dropout(0.5))                # Dropout
+            input_size = neurons  # Update input size for the next layer
+
+        # Final output layer
+        layers.append(nn.Linear(input_size, num_classes))  # Final output layer, no activation
+
+        # Store all layers in nn.Sequential
+        self.classifier = nn.Sequential(*layers)
+
 
     def forward(self, x):
         # Forward pass through ResNet-50 backbone (without the final FC layer)
