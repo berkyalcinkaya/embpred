@@ -6,6 +6,10 @@ import numpy as np
 from skimage.io import imread, imsave
 
 output_dir = PROJ_ROOT / "reports" / "sample_images"
+
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
 embryo = "Subj_26790_Emb1"
 mapping_file = RAW_DATA_DIR / "output.json"
 image_dir = RAW_DATA_DIR / "DatasetNew" / embryo / "F0"
