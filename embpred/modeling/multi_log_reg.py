@@ -40,7 +40,7 @@ if __name__ == '__main__':
     MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
     model_dir = MODELS_DIR / "log_reg"
     device = get_device()
-    dataset = PROCESSED_DATA_DIR / "all-classes_carson-224-3depths-noCrop.csv"
+    dataset = PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"
     files, labels = get_data_from_dataset_csv(dataset)
 
     with open(TEMPORAL_MAP_PATH, 'r') as f:
