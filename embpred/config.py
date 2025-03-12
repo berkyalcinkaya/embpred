@@ -29,7 +29,7 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 RANDOM_STATE = 11
 EMB_OUTLIER_COUNT = 400 # remove embryos with less than 400 images, see 06-EDA notebook
 
-RCNN_PATH = MODELS_DIR / "FasterRCNN.pt"
+RCNN_PATH = MODELS_DIR / "rcnn.pt"
 
 TEMPORAL_MAP_PATH = PROCESSED_DATA_DIR / "timepoint_mapping.json"
 
