@@ -67,7 +67,7 @@ if __name__ == '__main__':
                 image = np.stack([image, image, image], axis=2)
                 assert image.shape == (224, 224, 3)
             embedding = create_embedding(image, device, resnet_model)
-            embeddings.to(cpu)
+            embedding.to(cpu)
             embeddings.append(embedding)
             fname = os.path.basename(file)
             fnames.append(fname)    
