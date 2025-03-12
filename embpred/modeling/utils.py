@@ -44,4 +44,31 @@ def report_kfolds_results(model_dir, accs, aucs, macros, losses, accum_conf_mat,
 
     logger.info(f'Results saved to {results_file}')
     logger.info(f'Confusion matrix saved to {conf_matrix_file}')
-                
+
+def report_test_set_results(model_dir, test_micro, test_aucs, test_macro, avg_loss, conf_mat):
+    # go back one directory for model_dir
+    model_dir = os.path.dirname(model_dir)
+    results_file = os.path.join(model_dir, 'test_results.csv')
+
+    result_str = f'(Test Set Final Result)| test_micro={test_micro:.2f}, ' \
+                f'test_auc={test_aucs:.2f}, ' \
+                f'test_macro={test_macro:.2f}, ' \
+                f'avg_loss={avg_loss:.2f}\n'
+    print(result_str)
+
+    with open(results_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # Write header
+        writer.writerow(['Metric', 'Value'])
+        # Write each metric separately with mean and standard deviation in different columns
+        writer.writerow(['Micro Avg (%)', f'{test_micro:.2f}'])
+        writer.writerow(['AUC (%)', f'{test_aucs:.2f}'])
+        writer.writerow(['Macro Avg (%)', f'{test_macro:.2f}'])
+        writer.writerow(['Loss', f'{avg_loss:.2f}'])
+    
+    # Save test set confusion matrix to CSV
+    conf_matrix_file = os.path.join(model_dir, 'test_confusion_matrix.csv')
+    np.savetxt(conf_matrix_file, conf_mat, delimiter=",", fmt='%d')
+    
+    logger.info(f'Results saved to {results_file}')
+    logger.info(f'Test set confusion matrix saved to {conf_matrix_file}')

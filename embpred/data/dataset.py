@@ -13,6 +13,7 @@ from torchvision.io import read_image
 import skimage 
 import tqdm
 import glob
+from embpred.config import EMB_OUTLIER_COUNT
 from embpred.data.my_transforms import ShuffleColor
 plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision import transforms as v2
@@ -36,7 +37,13 @@ def get_embryo_names_by_from_files(files, labels):
         if embryo_name not in embryo_names_to_labels:
             embryo_names_to_labels[embryo_name] = []
         embryo_names_to_labels[embryo_name].append(label)
-
+    
+    # remove embryos with less than 400 images
+    outliers = [embryo for embryo, count in embryo_names_to_count.items() if count < EMB_OUTLIER_COUNT]
+    for outlier in outliers:
+        del embryo_names_to_files[outlier]
+        del embryo_names_to_count[outlier]
+        del embryo_names_to_labels[outlier]
     return embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels
 
 
@@ -110,28 +117,50 @@ def stratified_kfold_split(image_paths, labels, n_splits=5, random_state=None, t
     
     return splits
 
-def kfold_split(strings, n_splits=5, random_state=None, test_size=0.25):
+def kfold_split(strings, n_splits=5, random_state=None, test_size=0.10, val_size=0.10):
     """
-    Perform k-fold split on a list of strings.
+    Perform k-fold split on a list of strings, with a single train/validation/test split 
+    when n_splits < 2. In this case, the validation and test sets are disjoint and both
+    represent the given proportions of the total data.
 
     Parameters:
     strings (list): List of strings to be split.
-    n_splits (int): Number of folds. Default is 5.
-    random_state (int or None): Random state for reproducibility. Default is None.
+    n_splits (int): Number of folds. For a single split, set this < 2.
+    random_state (int or None): Random state for reproducibility.
+    test_size (float): Proportion of the total dataset to use as the test set.
+    val_size (float): Proportion of the total dataset to use as the validation set. 
+                    Should always be nonzero
 
     Returns:
-    List of tuples: Each tuple contains two lists (train_strings, test_strings) for each fold.
-                    If n_splits < 2, returns a single train-test split.
+    List of tuples: For n_splits < 2, returns a single tuple:
+                    (train_strings, val_strings, test_strings)
     """
     # Ensure we have a non-empty list of strings
     assert len(strings) > 0, "The list of strings must not be empty."
+    assert val_size > 0, "Validation size must be nonzero. Test set is optional"
     
     if n_splits < 2:
-        # Perform a single train-test split
-        train_strings, test_strings = train_test_split(
-            strings, test_size=test_size, random_state=random_state
+        total_temp_size = test_size + val_size
+        if total_temp_size >= 1.0:
+            raise ValueError("The sum of test_size and val_size must be less than 1.")
+        
+        # Split the data: training set and temporary set (for validation and test)
+        train_strings, temp = train_test_split(
+            strings, test_size=total_temp_size, random_state=random_state
         )
-        return [(train_strings, test_strings)]
+        
+        if test_size == 0:
+            return [(train_strings, temp, [])]
+       
+        # Calculate the relative size of the test set with respect to the temporary set.
+        test_ratio = test_size / total_temp_size
+        
+        # Split the temporary set into validation and test sets
+        val_strings, test_strings = train_test_split(
+            temp, test_size=test_ratio, random_state=random_state
+        )
+        
+        return [(train_strings, val_strings, test_strings)]
     
     # Initialize KFold
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)

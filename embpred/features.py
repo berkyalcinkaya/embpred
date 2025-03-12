@@ -12,7 +12,6 @@ from torchvision import transforms
 from skimage.io import imread
 from torchvision import models, transforms
 
-
 def create_resnet50_embedding(image: np.ndarray) -> torch.Tensor:
     """
     Creates an image embedding from a 224x224x3 image using a pre-trained ResNet50.

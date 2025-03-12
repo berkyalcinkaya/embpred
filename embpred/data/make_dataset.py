@@ -7,6 +7,7 @@ from tqdm import tqdm
 from glob import glob
 import os
 from typing import List, Union
+from embpred import data
 from embpred.config import PROCESSED_DATA_DIR, RAW_DATA_DIR, MODELS_DIR, INTERIM_DATA_DIR
 from embpred.features import ExtractEmbFrame, extract_emb_frame_2d, load_faster_RCNN_model_device
 import csv
@@ -150,7 +151,6 @@ def make_dataset(mappings: List[dict], paths, labels, loc = PROCESSED_DATA_DIR, 
             logger.info(f"Saved dataset to {loc / dataset_name}")
 
 
-
 def load_depths(emb_dir, depths):
     data = {}
     print(emb_dir)
@@ -253,6 +253,19 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
         assert ims.shape == (target_size[0], target_size[1], len(depths))
         #assert (ims.min() >= 0) and (ims.max() > 1)
         imsave(im_file, ims)
+    
+
+def get_temporal_index_by_embryo(embs):
+    depth = "F0"
+    timepoint_mapping = {}
+    for emb_dir in tqdm(embs):
+        images = sorted(glob(os.path.join(emb_dir, depth, "*.jpeg")), key = lambda x: int(x.split(".")[-2].split("RUN")[-1]))
+        N = len(images)
+        for i, image in enumerate(images):
+            timepoint_mapping[os.path.basename(image)] = i/N
+    print(len(np.unique(list(timepoint_mapping.keys()))))
+    return timepoint_mapping
+
 
 def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
                            depths=["F-45", "F-30", "F-15","F0", "F15", "F30", "F45"],
@@ -326,17 +339,29 @@ if __name__ == "__main__":
     # make_dataset(mappings, paths, labels, dataset_additional_text="undersampled-2")
     datasets = ["DatasetNew", "Dataset2"]
     mappings = ["output.json", "output2.json"]
+
+    for dataset in datasets:
+        dataset_dir = RAW_DATA_DIR / dataset
+        embryo_dirs = [dataset_dir / d for d in os.listdir(dataset_dir) if os.path.isdir(dataset_dir / d)]
+        print("Found embryo directories:", embryo_dirs)
+        timepoint_mapping = get_temporal_index_by_embryo(embryo_dirs)
+
+        # randomly print one key value pair from the list 
+        print(list(timepoint_mapping.items())[0])
+
+        with open(PROCESSED_DATA_DIR / "timepoint_mapping.json", "w") as f:
+            json.dump(timepoint_mapping, f)
     
     #run process by focal depths on both datasets with a target size of 224x224 and with t
     #depths of -15, 0, 15
     #save as jpegs
     
-    for dataset, mapping in zip(datasets, mappings):
-        process_by_focal_depth(dataset, 'carson-224-3depths-noCrop', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
-                               target_size=(224, 224), pad_images=False, output_ext="jpeg", resize_only=True)
+    # for dataset, mapping in zip(datasets, mappings):
+    #     process_by_focal_depth(dataset, 'carson-224-3depths-noCrop', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], # reversed
+    #                            target_size=(224, 224), pad_images=False, output_ext="jpeg", resize_only=True)
     
-    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths-noCrop", im_type="jpeg")
-    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
-         mappings = json.load(f)
-    mapping_to_use = {k:v for k,v in mappings.items() if k=="all-classes"}
-    make_dataset(mapping_to_use, paths, labels, dataset_additional_text="carson-224-3depths-noCrop")
+    # paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths-noCrop", im_type="jpeg")
+    # with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+    #      mappings = json.load(f)
+    # mapping_to_use = {k:v for k,v in mappings.items() if k=="all-classes"}
+    # make_dataset(mapping_to_use, paths, labels, dataset_additional_text="carson-224-3depths-noCrop")
