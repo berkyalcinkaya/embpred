@@ -52,7 +52,7 @@ if __name__ == '__main__':
     dataset2 = PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"
     output_dir = PROCESSED_DATA_DIR 
 
-    for dataset, name in zip([dataset1, dataset2, dataset2], ["noCrop", "Crop" "cropSingleDepth"]):
+    for dataset, name in zip([dataset1, dataset2, dataset2], ["noCrop", "Crop", "cropSingleDepth"]):
         files, labels = get_data_from_dataset_csv(dataset)        
         for file in files:
             assert(os.path.basename(file) in temporal_map)
@@ -76,6 +76,10 @@ if __name__ == '__main__':
             temporal_val_tensor = torch.tensor(temporal_val, dtype=torch.float, device=cpu)
 
             embedding_with_temporal = torch.cat([embedding, temporal_val_tensor])
+            
+            assert embedding_with_temporal.shape == (2049,)
+            assert embedding.shape == (2048,)
+
             embeddings_with_temporal.append(embedding_with_temporal)
         embeddings = torch.stack(embeddings)
         embeddings_with_temporal = torch.stack(embeddings_with_temporal)
