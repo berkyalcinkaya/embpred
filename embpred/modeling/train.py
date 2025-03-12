@@ -85,7 +85,6 @@ if __name__ == "__main__":
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = True
-    classes_to_drop = [13]
 
 
     mappings = load_mappings(pth=MAPPING_PATH)
