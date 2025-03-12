@@ -1,11 +1,9 @@
 import cv2
 from embpred.config import RAW_DATA_DIR, PROJ_ROOT
-import json
 import os
 from glob import glob
-import numpy as np
 from skimage.io import imread, imsave
-from embpred.features import load_faster_RCNN_model_device, ExtractEmbFrame, extract_emb_frame_2d
+from embpred.features import load_faster_RCNN_model_device, extract_emb_frame_2d
 from skimage.transform import resize
 from loguru import logger
 
@@ -52,6 +50,7 @@ for im in [im15, im0, imNeg15]:
 merged_im = cv2.merge(bbox_ims)
 assert(merged_im.shape == (224,224,3))
 logger.info(f"Merged bounding boxes of shape {merged_im.shape}")
+print(merged_im.min(), merged_im.max())
 imsave(str(output_dir / "merged_cropped_resized") + ".jpeg", merged_im) 
 logger.info(f"Saved merged image")
 
