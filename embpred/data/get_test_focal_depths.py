@@ -1,3 +1,4 @@
+import cv2
 from embpred.config import RAW_DATA_DIR, PROJ_ROOT
 import json
 import os
@@ -43,11 +44,12 @@ for im in [im15, im0, imNeg15]:
     bbox_im = extract_emb_frame_2d(im, model, device)
     logger.info(f"Extracted bounding box of shape {bbox_im.shape}")
     bbox_im = resize(bbox_im, (224,224), anti_aliasing=True, preserve_range=True)
+    logger.info(f"Resized bounding box to shape {bbox_im.shape}")
     bbox_ims.append(bbox_im)
 
 
 # merge
-merged_im = np.stack(bbox_ims, axis=2)
+merged_im = cv2.merge(bbox_ims)
 assert(merged_im.shape == (224,224,3))
 imsave(str(output_dir / "merged_cropped_resized") + ".jpeg", merged_im) 
 logger.info(f"Saved merged image")
