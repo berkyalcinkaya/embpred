@@ -16,9 +16,11 @@ print(len(images))
 with open(mapping_file) as f:
     mapping = json.load(f)
 embryo_map = mapping[embryo]
+print(embryo_map)
 
 labels = embryo_map.keys()
 unique_labels = np.unique(list(labels))
+print(unique_labels)
 
 for i, image_path in  enumerate(images):
     image_name = os.path.basename(image_path)
