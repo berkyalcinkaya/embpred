@@ -1,0 +1,5 @@
+{
+    "dropout": false,
+    "dropout_rate": 0.5,
+    "do_xavier": false
+}

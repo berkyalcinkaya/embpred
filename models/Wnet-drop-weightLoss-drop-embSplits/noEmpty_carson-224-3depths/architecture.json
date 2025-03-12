@@ -1,0 +1,4 @@
+{
+    "dropout": true,
+    "dropout_rate": 0.5
+}

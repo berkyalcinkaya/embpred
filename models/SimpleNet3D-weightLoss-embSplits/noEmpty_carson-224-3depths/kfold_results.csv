@@ -1,0 +1,5 @@
+Metric,Mean,Standard Deviation
+Accuracy (%),49.67,0.00
+AUC (%),87.40,0.00
+Macro Avg (%),36.66,0.00
+Loss,0.02,0.00
