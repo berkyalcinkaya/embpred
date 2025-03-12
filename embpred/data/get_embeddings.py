@@ -71,6 +71,12 @@ if __name__ == '__main__':
             embeddings.append(embedding)
             fname = os.path.basename(file)
             fnames.append(fname)    
+
+            temporal_val = temporal_map[fname]
+            # temporal value is a scalar, so we need to convert it to a tensor
+            temporal_val_tensor = torch.tensor(temporal_val, dtype=torch.float, device=cpu)
+            print(temporal_val, temporal_val_tensor, temporal_val_tensor.shape, embedding.shape)
+
             embedding_with_temporal = torch.cat([embedding, torch.tensor(temporal_map[fname], dtype=torch.float, device=cpu)])
             embeddings_with_temporal.append(embedding_with_temporal)
         embeddings = torch.stack(embeddings)
