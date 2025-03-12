@@ -12,7 +12,14 @@ from torchvision import transforms
 from skimage.io import imread
 from torchvision import models, transforms
 
-def create_resnet50_embedding(image: np.ndarray) -> torch.Tensor:
+def get_resnet50_model_embedding_model(device):
+    model = models.resnet50(pretrained=True)
+    model.fc = torch.nn.Identity()
+    model.eval()
+    model.to(device)
+    return model
+
+def create_embedding(image: np.ndarray, device, resnet_model) -> torch.Tensor:
     """
     Creates an image embedding from a 224x224x3 image using a pre-trained ResNet50.
     The function accepts an image as a NumPy array, converts it to a tensor,
@@ -27,6 +34,7 @@ def create_resnet50_embedding(image: np.ndarray) -> torch.Tensor:
     # Convert NumPy array with shape (H, W, C) to a torch.Tensor with shape (C, H, W)
     image_tensor = torch.from_numpy(image).permute(2, 0, 1).float()
     # Scale pixel values from [0, 255] to [0, 1]
+    print(image_tensor.max(), image_tensor.min())
     image_tensor = image_tensor / 255.0
 
     # Define normalization transform for ResNet50
@@ -34,16 +42,11 @@ def create_resnet50_embedding(image: np.ndarray) -> torch.Tensor:
                                      std=[0.229, 0.224, 0.225])
     image_tensor = normalize(image_tensor)
     # Add a batch dimension
-    image_tensor = image_tensor.unsqueeze(0)
-
-    # Load pre-trained ResNet50 model and remove the final fully connected layer
-    model = models.resnet50(pretrained=True)
-    model.fc = torch.nn.Identity()  # Replace classification head with identity to get embeddings
-    model.eval()  # Set model to evaluation mode
+    image_tensor = image_tensor.unsqueeze(0).to(device)
 
     # Obtain the embedding without computing gradients
     with torch.no_grad():
-        embedding = model(image_tensor)
+        embedding = resnet_model(image_tensor)
     
     # Remove the batch dimension before returning the embedding
     return embedding.squeeze(0)

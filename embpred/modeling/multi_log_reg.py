@@ -2,6 +2,7 @@ from itertools import count
 from multiprocessing import process
 from platform import architecture
 import random
+from venv import create
 from loguru import logger
 from requests import get
 import test
@@ -31,27 +32,35 @@ from embpred.modeling.loss import get_class_weights, weighted_cross_entropy_loss
 import csv
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from embpred.features import create_resnet50_embedding
+from embpred.features import create_embedding, get_resnet50_model_embedding_model
+from skimage.io import imread 
 
 
 if __name__ == '__main__':
+
+    device = get_device()
+    resnet_model = get_resnet50_model_embedding_model(device)
 
     KFOLDS = 2
     MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
     model_dir = MODELS_DIR / "log_reg"
     device = get_device()
-    dataset = PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"
+    dataset = PROCESSED_DATA_DIR / "all-classes_carson-224-3depths-noCrop.csv"
     files, labels = get_data_from_dataset_csv(dataset)
 
     with open(TEMPORAL_MAP_PATH, 'r') as f:
         temporal_map = json.load(f)
     
-    print(len(files))
-    print(len(temporal_map))
-    
     for file in files:
-        print(os.path.basename(file))
         assert(os.path.basename(file) in temporal_map)
+    
+    # for each file in files, get a set of embeddings
+    embeddings = []
+    for file in files:
+        image = imread(file)
+        embedding = create_embedding(image, device, resnet_model)
+
+
 
     # embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
     # k_fold_splits_by_embryo = kfold_split(list(embryo_names_to_files.keys()), n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=0.1,
