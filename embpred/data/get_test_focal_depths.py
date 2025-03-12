@@ -50,7 +50,7 @@ for im in [im15, im0, imNeg15]:
 merged_im = cv2.merge(bbox_ims)
 assert(merged_im.shape == (224,224,3))
 logger.info(f"Merged bounding boxes of shape {merged_im.shape}")
-print(merged_im.min(), merged_im.max())
-imsave(str(output_dir / "merged_cropped_resized") + ".jpeg", merged_im) 
+merged_im_uint8 = merged_im.astype('uint8')
+imsave(str(output_dir / "merged_cropped_resized") + ".jpeg", merged_im_uint8) 
 logger.info(f"Saved merged image")
 
