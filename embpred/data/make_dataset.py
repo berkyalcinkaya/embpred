@@ -351,7 +351,7 @@ if __name__ == "__main__":
         # randomly print one key value pair from the list 
         print(list(timepoint_mapping.items())[100])
 
-        os.path.remove(PROCESSED_DATA_DIR / "timepoint_mapping.json")
+        os.remove(PROCESSED_DATA_DIR / "timepoint_mapping.json")
         with open(PROCESSED_DATA_DIR / "timepoint_mapping.json", "w") as f:
             json.dump(timepoint_mapping, f)
     
