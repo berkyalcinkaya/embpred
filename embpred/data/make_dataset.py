@@ -216,7 +216,7 @@ def get_potential_labels(label_json, embs, label_key):
     )
     return potential_labels
 
-def process_embryo(emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use):
+def process_embryo(emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use, resize_only=False):
     depth_ims = load_depths(emb_dir, depths)
     labels_by_subj = label_json[emb_dir.name][label_key]
     num_tp = len(depth_ims[depths[0]])
@@ -236,7 +236,9 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
         for depth in depths:
             fname = depth_ims[depth][tp]
             image = imread(fname)
-            if pad_images:
+            if resize_only:
+                image = resize(image, target_size, anti_aliasing=True, preserve_range=True)
+            elif pad_images:
                 image = focus_and_pad(image, target_size, model, device)
             else:
                 image = extract_emb_frame_2d(image, model, device)
@@ -250,7 +252,7 @@ def process_embryo(emb_dir, depths, label_json, label_key, model, device, output
 
 def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, classes_to_use=None, 
                            depths=["F-45", "F-30", "F-15","F0", "F15", "F30", "F45"],
-                           target_size=(800, 800), pad_images=False, output_ext="tif"):
+                           target_size=(800, 800), pad_images=False, output_ext="tif", resize_only=False):
     '''
     Code used to generate the datasets for the data labeled by carson. Creates a new directory
     in data/interim that has subdirectories corresponding to all the timepoint labels
@@ -270,9 +272,8 @@ def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, clas
     model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
 
     for emb_dir in tqdm(embs):
-        process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, target_size, pad_images, output_ext, classes_to_use)
-
-
+        process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, 
+                       target_size, pad_images, output_ext, classes_to_use, resize_only=resize_only)
 
 def equalizeDistributionWithUnderSampling(paths, labels, max_num_per_class=None):
     '''
@@ -319,13 +320,15 @@ if __name__ == "__main__":
     datasets = ["DatasetNew", "Dataset2"]
     mappings = ["output.json", "output2.json"]
     
-    # run process by focal depths on both datasets with a target size of 224x224 and with t
-    # depths of -15, 0, 15
-    # save as jpegs
-    # for dataset, mapping in zip(datasets, mappings):
-    #     process_by_focal_depth(dataset, f'carson-224-3depths', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
-    #                            target_size=(224, 224), pad_images=False, output_ext="jpeg")
-    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths", im_type="jpeg")
-    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
-        mappings = json.load(f)
-    make_dataset(mappings, paths, labels, dataset_additional_text="carson-224-3depths")
+    #run process by focal depths on both datasets with a target size of 224x224 and with t
+    #depths of -15, 0, 15
+    #save as jpegs
+    
+    for dataset, mapping in zip(datasets, mappings):
+        process_by_focal_depth(dataset, 'carson-224-3depths-noRCNN', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
+                               target_size=(224, 224), pad_images=False, output_ext="jpeg", resize_only=True)
+    
+    # paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths", im_type="jpeg")
+    # with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+    #     mappings = json.load(f)
+    # make_dataset(mappings, paths, labels, dataset_additional_text="carson-224-3depths")
