@@ -1,3 +1,4 @@
+from cv2 import merge
 from torchvision.transforms import v2, ToTensor, Lambda
 import pandas as pd
 from sklearn.model_selection import StratifiedKFold, train_test_split, KFold
@@ -17,6 +18,28 @@ from embpred.config import EMB_OUTLIER_COUNT
 from embpred.data.my_transforms import ShuffleColor
 plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision import transforms as v2
+
+def process_embryo_split(embryo_names_to_files, embryo_names_to_labels, train_embryos, 
+                         val_embryos, test_embryos, merge_train_val=False, no_test=False):
+    train_files, train_labels = [], []
+    for embryo in train_embryos:
+        train_files.extend(embryo_names_to_files[embryo])
+        train_labels.extend(embryo_names_to_labels[embryo])
+    val_files, val_labels = [], []
+    for embryo in val_embryos:
+        val_files.extend(embryo_names_to_files[embryo])
+        val_labels.extend(embryo_names_to_labels[embryo])
+    if no_test:
+        return (train_files, train_labels, val_files, val_labels)
+    test_files, test_labels = [], []
+    for embryo in test_embryos:
+        test_files.extend(embryo_names_to_files[embryo])
+        test_labels.extend(embryo_names_to_labels[embryo])
+    if merge_train_val:
+        return (train_files + val_files, train_labels + val_labels, test_files, test_labels)
+
+    return (train_files, train_labels, val_files, val_labels, test_files, test_labels)
+
 
 def get_embryo_names_by_from_files(files, labels):
     embryo_names_to_files = {}

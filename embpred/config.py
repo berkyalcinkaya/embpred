@@ -31,6 +31,8 @@ EMB_OUTLIER_COUNT = 400 # remove embryos with less than 400 images, see 06-EDA n
 
 RCNN_PATH = MODELS_DIR / "FasterRCNN.pt"
 
+TEMPORAL_MAP_PATH = RAW_DATA_DIR / "timepoint_mapping.json"
+
 default_transforms = []
 
 # If tqdm is installed, configure loguru with tqdm.write
