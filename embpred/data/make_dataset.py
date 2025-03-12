@@ -261,8 +261,11 @@ def get_temporal_index_by_embryo(embs):
     for emb_dir in tqdm(embs):
         images = sorted(glob(os.path.join(emb_dir, depth, "*.jpeg")), key = lambda x: int(x.split(".")[-2].split("RUN")[-1]))
         N = len(images)
+        i_s = []
         for i, image in enumerate(images):
             timepoint_mapping[os.path.basename(image)] = i/N
+            i_s.append(i/N)
+        print(len(i_s))
     print(len(np.unique(list(timepoint_mapping.keys()))))
     return timepoint_mapping
 
