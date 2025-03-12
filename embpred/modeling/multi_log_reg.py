@@ -47,6 +47,7 @@ if __name__ == '__main__':
         temporal_map = json.load(f)
     
     for file in files:
+        print(os.path.basename(file))
         assert(os.path.basename(file) in temporal_map)
 
     # embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
