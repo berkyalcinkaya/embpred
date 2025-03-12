@@ -46,6 +46,9 @@ if __name__ == '__main__':
     with open(TEMPORAL_MAP_PATH, 'r') as f:
         temporal_map = json.load(f)
     
+    print(len(files))
+    print(len(temporal_map))
+    
     for file in files:
         print(os.path.basename(file))
         assert(os.path.basename(file) in temporal_map)
