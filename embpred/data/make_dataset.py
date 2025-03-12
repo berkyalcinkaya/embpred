@@ -265,7 +265,6 @@ def get_temporal_index_by_embryo(embs):
         for i, image in enumerate(images):
             timepoint_mapping[os.path.basename(image)] = i/N
             i_s.append(i/N)
-        print(len(i_s))
     print(len(np.unique(list(timepoint_mapping.keys()))))
     return timepoint_mapping
 
@@ -350,8 +349,9 @@ if __name__ == "__main__":
         timepoint_mapping = get_temporal_index_by_embryo(embryo_dirs)
 
         # randomly print one key value pair from the list 
-        print(list(timepoint_mapping.items())[0])
+        print(list(timepoint_mapping.items())[100])
 
+        os.path.remove(PROCESSED_DATA_DIR / "timepoint_mapping.json")
         with open(PROCESSED_DATA_DIR / "timepoint_mapping.json", "w") as f:
             json.dump(timepoint_mapping, f)
     
