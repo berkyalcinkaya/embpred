@@ -38,6 +38,7 @@ from skimage.io import imread
 
 if __name__ == '__main__':
     device = get_device()
+    cpu = torch.device('cpu')
     resnet_model = get_resnet50_model_embedding_model(device)
 
     KFOLDS = 2
@@ -66,6 +67,7 @@ if __name__ == '__main__':
                 image = np.stack([image, image, image], axis=2)
                 assert image.shape == (224, 224, 3)
             embedding = create_embedding(image, device, resnet_model)
+            embeddings.to(cpu)
             embeddings.append(embedding)
             fname = os.path.basename(file)
             fnames.append(fname)    
