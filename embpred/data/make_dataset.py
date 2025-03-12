@@ -8,7 +8,7 @@ from glob import glob
 import os
 from typing import List, Union
 from embpred import data
-from embpred.config import PROCESSED_DATA_DIR, RAW_DATA_DIR, MODELS_DIR, INTERIM_DATA_DIR
+from embpred.config import PROCESSED_DATA_DIR, RAW_DATA_DIR, MODELS_DIR, INTERIM_DATA_DIR, TEMPORAL_MAP_PATH
 from embpred.features import ExtractEmbFrame, extract_emb_frame_2d, load_faster_RCNN_model_device
 import csv
 import json
@@ -342,6 +342,7 @@ if __name__ == "__main__":
     datasets = ["DatasetNew", "Dataset2"]
     mappings = ["output.json", "output2.json"]
 
+    os.remove(TEMPORAL_MAP_PATH)
     for dataset in datasets:
         dataset_dir = RAW_DATA_DIR / dataset
         embryo_dirs = [dataset_dir / d for d in os.listdir(dataset_dir) if os.path.isdir(dataset_dir / d)]
@@ -351,9 +352,18 @@ if __name__ == "__main__":
         # randomly print one key value pair from the list 
         print(list(timepoint_mapping.items())[100])
 
-        os.remove(PROCESSED_DATA_DIR / "timepoint_mapping.json")
-        with open(PROCESSED_DATA_DIR / "timepoint_mapping.json", "w") as f:
-            json.dump(timepoint_mapping, f)
+        timepoint_mapping_file = PROCESSED_DATA_DIR / "timepoint_mapping.json"
+        if timepoint_mapping_file.exists():
+            with open(timepoint_mapping_file, "r") as f:
+                existing_mapping = json.load(f)
+        else:
+            existing_mapping = {}
+
+        # Merge new mapping into existing mapping (new keys will update old values)
+        existing_mapping.update(timepoint_mapping)
+
+        with open(timepoint_mapping_file, "w") as f:
+            json.dump(existing_mapping, f, indent=4)
     
     #run process by focal depths on both datasets with a target size of 224x224 and with t
     #depths of -15, 0, 15
