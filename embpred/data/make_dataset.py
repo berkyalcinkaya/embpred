@@ -1,4 +1,5 @@
 from pathlib import Path
+from venv import logger
 import typer
 from loguru import logger as logging
 from tqdm import tqdm
@@ -145,6 +146,8 @@ def make_dataset(mappings: List[dict], paths, labels, loc = PROCESSED_DATA_DIR, 
             csv_out.writerow(["path", "label"])
             for row in zip(paths, labels_to_numeric(labels, mappings[mapping_name])):
                 csv_out.writerow(row)
+            logger.info(f"Saved dataset to {loc / dataset_name}")
+
 
 
 def load_depths(emb_dir, depths):
@@ -325,10 +328,11 @@ if __name__ == "__main__":
     #save as jpegs
     
     for dataset, mapping in zip(datasets, mappings):
-        process_by_focal_depth(dataset, 'carson-224-3depths-noRCNN', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
+        process_by_focal_depth(dataset, 'carson-224-3depths-noCrop', mapping, use_GPU=True, depths=["F-15", "F0", "F15"], 
                                target_size=(224, 224), pad_images=False, output_ext="jpeg", resize_only=True)
     
-    # paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths", im_type="jpeg")
-    # with open(RAW_DATA_DIR / "mappings.json", "r") as f:
-    #     mappings = json.load(f)
-    # make_dataset(mappings, paths, labels, dataset_additional_text="carson-224-3depths")
+    paths, labels = get_all_image_paths_from_raws(loc = INTERIM_DATA_DIR / "carson-224-3depths-noCrop", im_type="jpeg")
+    with open(RAW_DATA_DIR / "mappings.json", "r") as f:
+         mappings = json.load(f)
+    mapping_to_use = {k:v for k,v in mappings.items() if k=="all-classes"}
+    make_dataset(mapping_to_use, paths, labels, dataset_additional_text="carson-224-3depths-noCrop")
