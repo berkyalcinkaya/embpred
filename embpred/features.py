@@ -34,7 +34,6 @@ def create_embedding(image: np.ndarray, device, resnet_model) -> torch.Tensor:
     # Convert NumPy array with shape (H, W, C) to a torch.Tensor with shape (C, H, W)
     image_tensor = torch.from_numpy(image).permute(2, 0, 1).float()
     # Scale pixel values from [0, 255] to [0, 1]
-    print(image_tensor.max(), image_tensor.min())
     image_tensor = image_tensor / 255.0
 
     # Define normalization transform for ResNet50
