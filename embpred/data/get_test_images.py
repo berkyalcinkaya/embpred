@@ -9,8 +9,9 @@ output_dir = PROJ_ROOT / "reports" / "sample_images"
 embryo = "Subj_26790_Emb1"
 mapping_file = RAW_DATA_DIR / "output.json"
 image_dir = RAW_DATA_DIR / "DatasetNew" / embryo / "F0"
+print(os.path.exists(image_dir))
 images = sorted(glob(os.path.join(image_dir, "*.jpeg")), key = lambda x: int(x.split(".")[-2].split("RUN")[-1]))
-
+print(len(images))
 
 with open(mapping_file) as f:
     mapping = json.load(f)
