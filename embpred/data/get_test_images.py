@@ -21,7 +21,9 @@ unique_labels = np.unique(list(labels))
 
 for i, image_path in  enumerate(images):
     image_name = os.path.basename(image_path)
-    label = embryo_map[image_name]
+    if str(i) not in embryo_map:
+        continue
+    label = embryo_map[str(i)]
     if label in unique_labels:
         unique_labels = np.delete(unique_labels, np.where(unique_labels == label))
         print(f"Image {i} has label {label}")
