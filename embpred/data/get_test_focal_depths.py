@@ -38,8 +38,9 @@ im15 = imread(depth_ims[4])
 
 bbox_ims = []
 logger.info("Extracting bounding boxes")
+model, device = load_faster_RCNN_model_device()
 for im in [im15, im0, imNeg15]:
-    bbox_im = extract_emb_frame_2d(im)
+    bbox_im = extract_emb_frame_2d(im, model, device)
     logger.info(f"Extracted bounding box of shape {bbox_im.shape}")
     bbox_im = resize(bbox_im, (224,224), anti_aliasing=True, preserve_range=True)
     bbox_ims.append(bbox_im)
