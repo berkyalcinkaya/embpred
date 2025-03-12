@@ -31,7 +31,7 @@ from embpred.modeling.loss import get_class_weights, weighted_cross_entropy_loss
 import csv
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-
+from embpred.features import create_resnet50_embedding
 
 
 if __name__ == '__main__':
@@ -49,23 +49,23 @@ if __name__ == '__main__':
     for file in files:
         assert(os.path.basename(file) in temporal_map)
 
-    embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
-    k_fold_splits_by_embryo = kfold_split(list(embryo_names_to_files.keys()), n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=0.1,
-                                          test_size=0.1)
-    train_embryos, val_embryos, test_embryos = k_fold_splits_by_embryo[0]
-    split = process_embryo_split( embryo_names_to_files, embryo_names_to_labels, train_embryos, val_embryos, test_embryos,
-                                 merge_train_val=True)
-    X_train, y_train, X_test, y_test = split
+    # embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
+    # k_fold_splits_by_embryo = kfold_split(list(embryo_names_to_files.keys()), n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=0.1,
+    #                                       test_size=0.1)
+    # train_embryos, val_embryos, test_embryos = k_fold_splits_by_embryo[0]
+    # split = process_embryo_split( embryo_names_to_files, embryo_names_to_labels, train_embryos, val_embryos, test_embryos,
+    #                              merge_train_val=True)
+    # X_train, y_train, X_test, y_test = split
 
-    # one hot encode labels
-    y_train = np.array(y_train)
-    y_test = np.array(y_test)
+    # # one hot encode labels
+    # y_train = np.array(y_train)
+    # y_test = np.array(y_test)
 
 
-    model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
-    model.fit(X_train, y_train)
+    # model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
+    # model.fit(X_train, y_train)
 
-    y_pred = model.predict(X_test)
-    print("Test Accuracy: {:.2f}%".format(accuracy_score(y_test, y_pred) * 100))
-    print("Classification Report:")
-    print(classification_report(y_test, y_pred))
+    # y_pred = model.predict(X_test)
+    # print("Test Accuracy: {:.2f}%".format(accuracy_score(y_test, y_pred) * 100))
+    # print("Classification Report:")
+    # print(classification_report(y_test, y_pred))
