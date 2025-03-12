@@ -43,6 +43,11 @@ for im in [im15, im0, imNeg15]:
     logger.info(f"Extracted bounding box of shape {bbox_im.shape}")
     bbox_im = resize(bbox_im, (224,224), anti_aliasing=True, preserve_range=True)
     logger.info(f"Resized bounding box to shape {bbox_im.shape}")
+
+    # save bbox image
+    imsave(str(output_dir / f"bbox_{depth}") + ".jpeg", bbox_im.astype('uint8'))
+    logger.info(f"Saved bounding box image for focal depth {depth}")
+
     bbox_ims.append(bbox_im)
 
 
