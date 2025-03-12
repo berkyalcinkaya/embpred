@@ -15,8 +15,7 @@ print(len(images))
 
 with open(mapping_file) as f:
     mapping = json.load(f)
-embryo_map = mapping[embryo]
-print(embryo_map)
+embryo_map = mapping[embryo]["timepoint_labels"]
 
 labels = embryo_map.keys()
 unique_labels = np.unique(list(labels))
