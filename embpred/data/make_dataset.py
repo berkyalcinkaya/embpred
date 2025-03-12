@@ -343,7 +343,7 @@ if __name__ == "__main__":
     for dataset in datasets:
         dataset_dir = RAW_DATA_DIR / dataset
         embryo_dirs = [dataset_dir / d for d in os.listdir(dataset_dir) if os.path.isdir(dataset_dir / d)]
-        print("Found embryo directories:", embryo_dirs)
+        print("Found embryo directories:", len(embryo_dirs))
         timepoint_mapping = get_temporal_index_by_embryo(embryo_dirs)
 
         # randomly print one key value pair from the list 
