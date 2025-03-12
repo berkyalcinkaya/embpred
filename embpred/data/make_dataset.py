@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from venv import logger
 import typer
 from loguru import logger as logging
@@ -272,7 +273,10 @@ def process_by_focal_depth(directory, output_dir, label_json, use_GPU=True, clas
     potential_labels = get_potential_labels(label_json, embs, label_key)
     create_output_directories(output_dir, potential_labels)
 
-    model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
+    if not resize_only:
+        model, device = load_faster_RCNN_model_device(use_GPU=use_GPU)
+    else:
+        model, device = None, None
 
     for emb_dir in tqdm(embs):
         process_embryo(directory / emb_dir, depths, label_json, label_key, model, device, output_dir, 
