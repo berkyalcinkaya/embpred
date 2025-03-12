@@ -17,7 +17,7 @@ with open(mapping_file) as f:
     mapping = json.load(f)
 embryo_map = mapping[embryo]["timepoint_labels"]
 
-labels = embryo_map.keys()
+labels = embryo_map.values()
 unique_labels = np.unique(list(labels))
 print(unique_labels)
 
