@@ -121,7 +121,7 @@ if __name__ == "__main__":
                 files, labels = do_random_sample(PRE_RANDOM_SAMPLE, files, labels)
 
             dataset, num_classes = get_filename_no_ext(dataset), len(np.unique(labels))
-            #logger.info(f"DATASET {dataset} | NUM CLASSES: {num_classes}")
+            logger.info(f"DATASET {dataset} | NUM CLASSES: {num_classes}")
 
             mapping = mappings[dataset.split("_")[0]]
             class_names_by_label = get_class_names_by_label(mapping)
@@ -181,10 +181,10 @@ if __name__ == "__main__":
                 else:
                     train_ims_new, train_labels_new = train_ims, train_labels
                 
-                train_data = CustomImageDataset(train_ims_new, train_labels_new, 
+                train_data = CustomImageDataset(train_ims_new, train_labels_new, num_classes,
                                                 img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
-                val_data = CustomImageDataset(val_ims, val_labels, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
-                test_data = CustomImageDataset(test_ims, test_labels, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
+                val_data = CustomImageDataset(val_ims, val_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
+                test_data = CustomImageDataset(test_ims, test_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
 
 
                 train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
@@ -198,9 +198,7 @@ if __name__ == "__main__":
                             logger.info(f"TEST LOADER: {images.shape} | {labels.shape}")
                             break
 
-                new_num_classes = train_data.get_num_classes()
-                logger.info(f"NUM CLASSES: {new_num_classes}")
-                model = model_class(num_classes=new_num_classes, **architecture_params)
+                model = model_class(num_classes=num_classes, **architecture_params)
                 param_count = count_parameters(model)
                 logger.info(f"{str(model)}")
                 logger.info(f"Model parameters: {param_count}")
@@ -240,7 +238,7 @@ if __name__ == "__main__":
             
             ### END of kFolds: Record model performance
             logger.info("KFOLDS COMPLETE: REPORTING RESULTS...")
-            model = model_class(num_classes=new_num_classes, **architecture_params)
+            model = model_class(num_classes=num_classes, **architecture_params)
             model.to(device)
             model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
             test_micro, test_aucs, test_macro, avg_loss, conf_mat = evaluate(model, device, test_loader, loss=criterion, get_conf_mat=True)

@@ -226,7 +226,7 @@ def get_basic_transforms():
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, img_paths, img_labels, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True, check_exists=True):
+    def __init__(self, img_paths, img_labels, num_classes, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True, check_exists=True):
         self.img_paths = img_paths
         if check_exists:
             num_exists = 0
@@ -241,7 +241,7 @@ class CustomImageDataset(Dataset):
         self.img_type = self.img_paths[0].split(".")[-1]
 
         self.img_labels = img_labels
-        self.num_classes = len(np.unique(self.img_labels))
+        self.num_classes = num_classes
         self.transform = img_transform
         self.encode_labels = encode_labels
         
