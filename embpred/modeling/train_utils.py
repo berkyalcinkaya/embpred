@@ -245,7 +245,6 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
 
     for data in loader:
         inputs, labels = data[0].to(device), data[1].to(device)
-        print("evaluate labels shape:", labels.shape)
         c = model(inputs)
         
         if loss is not None:

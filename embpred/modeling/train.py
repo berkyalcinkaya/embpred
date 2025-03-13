@@ -137,7 +137,7 @@ if __name__ == "__main__":
             embryos = list(embryo_names_to_files.keys())
             if DEBUG:
                 logger.info("DEBUG MODE: ONLY TRAINING ON 10 EMBRYOS")
-                embryos = embryos[:10]
+                embryos = embryos[:50]
             k_fold_splits = []
             k_fold_splits_by_embryo = kfold_split(embryos, n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=VAL_SIZE, test_size=TEST_SIZE)
             for train_embryos, val_embryos, test_embryos in k_fold_splits_by_embryo:
@@ -190,13 +190,6 @@ if __name__ == "__main__":
                 train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
                 val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, num_workers=4)
                 test_loader = DataLoader(test_data, batch_size=BATCH_SIZE, num_workers=4)
-
-                # check test loader
-                if DEBUG:
-                    if has_test:
-                        for i, (images, labels) in enumerate(test_loader):
-                            logger.info(f"TEST LOADER: {images.shape} | {labels.shape}")
-                            break
 
                 model = model_class(num_classes=num_classes, **architecture_params)
                 param_count = count_parameters(model)
