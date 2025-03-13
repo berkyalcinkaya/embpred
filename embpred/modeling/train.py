@@ -239,8 +239,9 @@ if __name__ == "__main__":
             report_kfolds_results(model_dir, accs, aucs, macros, losses, conf_mats, KFOLDS)
             report_test_set_results(model_dir, test_micro, test_auc, test_macro, avg_loss, conf_mat)
             del test_micro, test_aucs, test_macro, avg_loss, conf_mat
-            del test_loader, test_data, criterion, model
+            del test_loader, test_data, model
             torch.cuda.empty_cache()
+        
 
             
             
