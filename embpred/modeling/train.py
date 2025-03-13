@@ -22,7 +22,7 @@ from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_
                             load_mappings, get_class_names_by_label, 
                             get_transforms, get_embryo_names_by_from_files)
 from embpred.data.balance import DataBalancer
-from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir
+from embpred.modeling.train_utils import get_device, train_and_evaluate, evaluate, configure_model_dir, write_data_split
 from embpred.modeling.utils import report_kfolds_results, report_test_set_results
 from embpred.modeling.loss import get_class_weights, weighted_cross_entropy_loss
 import csv
@@ -34,6 +34,20 @@ import csv
 torch.cuda.empty_cache()
 
 MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
+
+VAL_SIZE = 0.1
+TEST_SIZE = 0.1
+KFOLDS = 1
+EPOCHS = 30
+LR = 0.0001
+WEIGHT_DECAY = 0.0001
+BATCH_SIZE = 64
+PRE_RANDOM_SAMPLE = None
+DO_REBALANCE = False
+DEBUG = True
+if DEBUG:
+    EPOCHS = 1
+EARLY_STOP_EPOCHS = 10
 
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
@@ -82,17 +96,6 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
-    KFOLDS = 1
-    EPOCHS = 30
-    LR = 0.0001
-    WEIGHT_DECAY = 0.0001
-    BATCH_SIZE = 64
-    PRE_RANDOM_SAMPLE = None
-    DO_REBALANCE = False
-    DEBUG = True
-    if DEBUG:
-        EPOCHS = 1
-
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
@@ -107,7 +110,6 @@ if __name__ == "__main__":
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
             files, labels = get_data_from_dataset_csv(dataset)
-
             embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
             logger.info(f"# EMBRYOS: {len(embryo_names_to_files)}")
 
@@ -132,13 +134,17 @@ if __name__ == "__main__":
             conf_mats = np.zeros((num_classes, num_classes))
 
             #k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
+            embryos = list(embryo_names_to_files.keys())
+            if DEBUG:
+                embryos = embryos[:2]
             k_fold_splits = []
-            k_fold_splits_by_embryo = kfold_split(list(embryo_names_to_files.keys()), n_splits=KFOLDS, random_state=RANDOM_STATE)
+            k_fold_splits_by_embryo = kfold_split(embryos, n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=VAL_SIZE, test_size=TEST_SIZE)
             for train_embryos, val_embryos, test_embryos in k_fold_splits_by_embryo:
                 
-                logger.info(f"Train: {len(train_embryos)} | Val: {len(val_embryos)} | Test: {len(test_embryos)}")
                 # TODO: this is hacked for the n_splits = 1 case
-
+                logger.info(f"Train: {len(train_embryos)} | Val: {len(val_embryos)} | Test: {len(test_embryos)}")
+                write_data_split( train_embryos, val_embryos, test_embryos, model_dir)
+                
                 train_files, train_labels = [], []
                 for embryo in train_embryos:
                     train_files.extend(embryo_names_to_files[embryo])
@@ -202,7 +208,7 @@ if __name__ == "__main__":
                 val_micro, val_auc, val_macro, val_losses = train_and_evaluate(model, train_loader, val_loader, 
                                                                     optimizer, device, criterion, False, 1, 1,
                                                                     EPOCHS, writer, best_model_path=model_save_path, 
-                                                                    class_names=class_names_by_label, early_stop_epochs=20, 
+                                                                    class_names=class_names_by_label, early_stop_epochs=EARLY_STOP_EPOCHS, 
                                                                     do_early_stop=True)
                 # load best model and evaluate
                 model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
