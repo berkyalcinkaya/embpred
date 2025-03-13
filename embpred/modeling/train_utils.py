@@ -13,6 +13,7 @@ import os
 from embpred.config import MODELS_DIR, DATA_DIR
 import torch.nn.functional as F
 from tqdm import tqdm
+import shutil
 
 
 def write_data_split(train_embryos, val_embryos, test_embryos, loc=DATA_DIR):
@@ -69,7 +70,7 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
     if os.path.exists(new_model_dir):
         if debug:
             logger.info(f"Deleting {new_model_dir}")
-            os.rmdir(new_model_dir)
+            shutil.rmtree(new_model_dir)
         else:
             raise ValueError(f"{new_model_dir} exists: {model_name} has already been trained with dataset {dataset_name}")
     else:
