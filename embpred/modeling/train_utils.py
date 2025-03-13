@@ -71,6 +71,7 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
         if debug:
             logger.info(f"Deleting {new_model_dir}")
             shutil.rmtree(new_model_dir)
+            os.makedirs(new_model_dir)
         else:
             raise ValueError(f"{new_model_dir} exists: {model_name} has already been trained with dataset {dataset_name}")
     else:
