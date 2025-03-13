@@ -49,7 +49,7 @@ DEBUG = False
 if DEBUG:
     EPOCHS = 1
 EARLY_STOP_EPOCHS = 10
-REMOVE_DIR = False
+REMOVE_DIR = True
 
 
 model_mappings =  {
