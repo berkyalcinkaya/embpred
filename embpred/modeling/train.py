@@ -90,6 +90,8 @@ if __name__ == "__main__":
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = False
     DEBUG = True
+    if DEBUG:
+        EPOCHS = 2
 
 
     mappings = load_mappings(pth=MAPPING_PATH)
