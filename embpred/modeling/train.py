@@ -85,7 +85,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("Kalyani-ResNet50baseline", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": 64, freeze: False})
+        ("Kalyani-ResNet50baseline", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": 64, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
