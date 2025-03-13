@@ -46,6 +46,6 @@ def weighted_cross_entropy_loss(num_classes: int, noisy_classes: list, device: t
     Returns:
         nn.CrossEntropyLoss: A PyTorch CrossEntropyLoss object that uses the computed class weights.
     """
-    class_weights = get_class_weights(num_classes, noisy_classes, device, weight_clean, weight_noisy)
+    class_weights = get_class_weights(num_classes, noisy_classes, device, weight_clean, weight_noisy, weight_dict=weight_dict)
     # Ensure you move the weights tensor to the same device as your model, e.g., using .to(device) when training.
     return nn.CrossEntropyLoss(weight=class_weights)

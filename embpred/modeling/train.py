@@ -52,6 +52,23 @@ EARLY_STOP_EPOCHS = 10
 REMOVE_DIR = True
 
 
+WEIGHT_DICT = {
+    0: 1.0,
+    1: 0.8,
+    2: 0.6,
+    3: 1.0,
+    4: 0.5,
+    5: 0.9,
+    6: 0.4,
+    7: 0.5,
+    8: 0.6,
+    9: 0.7,
+    10: 0.8,
+    11: 0.8,
+    12: 0.9,
+    13: 1.0
+}
+
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
     "CustomResNet18": CustomResNet18,
@@ -115,7 +132,7 @@ if __name__ == "__main__":
         assert(os.path.exists(dataset))
     
     for model_name, model_class, architecture_params in MODELS:
-        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,11,12], device, weight_noisy=0.5, weight_clean=1)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=WEIGHT_DICT)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
