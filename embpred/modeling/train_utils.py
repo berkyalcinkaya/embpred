@@ -42,7 +42,7 @@ def write_aucs_by_class(aucs, epoch, writer, mode="Train", mappings=None):
             class_name = f"class{i}"
         writer.add_scalar(f"Metrics/{mode}_AUC_{class_name}", auc, epoch)
         
-def configure_model_dir(model_name, dataset_name, mapping, architecture=None, additional_ids = None, debug=False):
+def configure_model_dir(model_name, dataset_name, mapping, architecture=None, additional_ids = None, debug=False, remove=False):
     """
     Configures a directory for the model based on its class name and dataset name.
     
@@ -54,6 +54,7 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
     - additional_ids: a list of additional info that will form subdirectories
     - debug: a boolean flag that specifies whether the model is being trained in debug mode, if so
             model_dir is deleted if it already exists
+    - remove: a boolean flag that specifies whether the model directory should be deleted if it already exists
 
     Returns:
     - new_model_dir: The path to the newly created model directory.
@@ -68,7 +69,7 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
             new_model_dir = os.path.join(new_model_dir, id)
 
     if os.path.exists(new_model_dir):
-        if debug:
+        if debug or remove:
             logger.info(f"Deleting {new_model_dir}")
             shutil.rmtree(new_model_dir)
             os.makedirs(new_model_dir)

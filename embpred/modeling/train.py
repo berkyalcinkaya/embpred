@@ -44,10 +44,12 @@ WEIGHT_DECAY = 0.0001
 BATCH_SIZE = 64
 PRE_RANDOM_SAMPLE = None
 DO_REBALANCE = False
-DEBUG = True
+DEBUG = False
 if DEBUG:
     EPOCHS = 1
 EARLY_STOP_EPOCHS = 10
+REMOVE_DIR = True
+
 
 model_mappings =  {
     "SimpleNet3D": SimpleNet3D,
@@ -126,7 +128,8 @@ if __name__ == "__main__":
             mapping = mappings[dataset.split("_")[0]]
             class_names_by_label = get_class_names_by_label(mapping)
             logger.info(class_names_by_label)
-            model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params, debug=DEBUG)
+            model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params, 
+                                            debug=DEBUG, remove=REMOVE_DIR)
             logger.info(f"MODEL DIR: {model_dir}")
             
             # train model over k-folds, record performance
