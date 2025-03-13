@@ -1,3 +1,4 @@
+from calendar import c
 from loguru import logger
 import time
 import numpy as np
@@ -8,10 +9,25 @@ from sklearn import metrics
 from torch.utils.data import DataLoader
 import json 
 import os
-import nni
-from embpred.config import MODELS_DIR
+#import nni
+from embpred.config import MODELS_DIR, DATA_DIR
 import torch.nn.functional as F
 from tqdm import tqdm
+
+
+def write_data_split(train_embryos, val_embryos, test_embryos, loc=DATA_DIR):
+    with open(loc / "train_val_test_embryos.txt", "w") as f:
+        f.write("train\n")
+        for embryo in train_embryos:
+            f.write(embryo + "\n")
+        f.write("val\n")
+        for embryo in val_embryos:
+            f.write(embryo + "\n")
+        f.write("test\n")
+        for embryo in test_embryos:
+            f.write(embryo + "\n")
+    logger.info("Wrote train, val, and test embryo names to {}".format(DATA_DIR / "train_val_test_embryos.txt"))
+
 
 
 def save_best_model(state, filename):
@@ -186,7 +202,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
             write_aucs_by_class(test_aucs, i, writer, mode="Test", mappings=class_names)
 
         if use_nni:
-            nni.report_intermediate_result(train_auc)
+            continue
+            #nni.report_intermediate_result(train_auc)
 
     accs, aucs, macros, losses = np.sort(np.array(accs)), np.sort(np.array(aucs)), np.sort(np.array(macros)), np.sort(np.array(losses))
     return accs.mean(), aucs.mean(), macros.mean(), losses.mean()

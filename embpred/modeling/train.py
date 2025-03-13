@@ -68,30 +68,37 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
+        ("ResNet50-CE-embSplits-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        ("ResNet50-CE-embSplits-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
+        ("ResNet50-CE-embSplits-2layer128-64", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
+        #("ResNet50-CE-embSplits-2layer64-32", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [64,32]})
         #("SimpleNet3D-weightLoss-embSplits", SimpleNet3D, {})
         #("Wnet-weight-noXaiver-embSplits", WNet, {"dropout":False, "dropout_rate":0.5, "do_xavier":False})
         #("BigWnet-embSplits", BigWNet, {"dropout":False})
-        ("ResNet50-weightLoss-2layer-embSplits", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
-        ("ResNet50-weightLoss-1layer-embSplits", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("Wnet-drop-weightLoss-drop-embSplits", WNet, {"dropout":True, "dropout_rate":0.5})
+        #("ResNet50-weightLoss-2layer-embSplits", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
+        #("ResNet50-weightLoss-1layer-embSplits", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        #("Wnet-drop-weightLoss-drop-embSplits", WNet, {"dropout":True, "dropout_rate":0.5})
         #("BiggerNet3D224-emb-kfolds-noUpSample", BiggerNet3D224, {})
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
     KFOLDS = 1
-    EPOCHS = 20
+    EPOCHS = 30
     LR = 0.0001
     WEIGHT_DECAY = 0.0001
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
-    DO_REBALANCE = True
+    DO_REBALANCE = False
 
 
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = [PROCESSED_DATA_DIR / "noEmpty_carson-224-3depths.csv"] # dataset prefixes determines which mapping to use
+    datasets = [PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv", PROCESSED_DATA_DIR / "all-classes_carson-224-3depths-noCrop.csv"] # dataset prefixes determines which mapping to use
+    for dataset in datasets:
+        assert(os.path.exists(dataset))
+    
     for model_name, model_class, architecture_params in MODELS:
-        criterion = weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], device, weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = nn.CrossEntropyLoss() #weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], device, weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")

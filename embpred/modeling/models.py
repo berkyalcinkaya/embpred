@@ -6,6 +6,99 @@ from collections import OrderedDict
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
+ 
+
+class AlexNet(nn.Module):
+    def __init__(self, num_classes=1000):
+        super(AlexNet, self).__init__()
+        # Convolutional layers
+        # Conv1: 96 filters of size 11x11, stride 4
+        # Followed by ReLU and max pooling (kernel 3x3, stride 2)
+        self.conv1 = nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0)
+        self.pool1 = nn.MaxPool2d(kernel_size=3, stride=2)
+        
+        # Conv2: 256 filters of size 5x5, stride 1, with padding 2 to preserve spatial size
+        # Followed by ReLU and max pooling (kernel 3x3, stride 2)
+        self.conv2 = nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2)
+        self.pool2 = nn.MaxPool2d(kernel_size=3, stride=2)
+        
+        # Conv3: 384 filters of size 3x3, stride 1, with padding 1
+        self.conv3 = nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1)
+        
+        # Conv4: 384 filters of size 3x3, stride 1, with padding 1
+        self.conv4 = nn.Conv2d(384, 384, kernel_size=3, stride=1, padding=1)
+        
+        # Conv5: 256 filters of size 3x3, stride 1, with padding 1
+        # Followed by ReLU and max pooling (kernel 3x3, stride 2)
+        self.conv5 = nn.Conv2d(384, 256, kernel_size=3, stride=1, padding=1)
+        self.pool5 = nn.MaxPool2d(kernel_size=3, stride=2)
+        
+        # Fully connected layers with 4096 neurons each and 50% dropout
+        # The size of the flattened feature map depends on the input image size.
+        # Assuming an input image of 227 x 227, the output of pool5 is typically 6 x 6.
+        self.fc1 = nn.Linear(256 * 6 * 6, 4096)
+        self.fc2 = nn.Linear(4096, 4096)
+        self.fc3 = nn.Linear(4096, num_classes)
+        self.dropout = nn.Dropout(0.5)
+    
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = self.pool1(x)
+        
+        x = F.relu(self.conv2(x))
+        x = self.pool2(x)
+        
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        
+        x = F.relu(self.conv5(x))
+        x = self.pool5(x)
+        
+        # Flatten the tensor for the fully connected layers
+        x = x.view(x.size(0), -1)
+        
+        x = self.dropout(F.relu(self.fc1(x)))
+        x = self.dropout(F.relu(self.fc2(x)))
+        x = self.fc3(x)
+        
+        return x
+
+
+class BasicCNN(nn.Module):
+    def __init__(self, num_classes=10):
+        super(BasicCNN, self).__init__()
+        # Assume input images are 224x224x3.
+        # Convolutional Layers:
+        # Conv1: Input channels=3, Output channels=16, Kernel=3x3, Padding=1 preserves spatial size.
+        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
+        # Conv2: Increase depth: Output channels=32
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
+        # Conv3: Increase depth further: Output channels=64
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)
+        
+        # A max pooling layer to reduce spatial dimensions by a factor of 2.
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # After three pooling operations the spatial size is reduced from 224 to 28 (i.e. 224/2^3 = 28).
+        # The flattened feature dimension is: 64 * 28 * 28.
+        self.fc1 = nn.Linear(64 * 28 * 28, 128)  # First fully connected layer.
+        self.fc2 = nn.Linear(128, num_classes)     # Final output layer.
+
+    def forward(self, x):
+        # Pass through Conv1, ReLU activation, and max pooling.
+        x = self.pool(F.relu(self.conv1(x)))
+        # Pass through Conv2, ReLU activation, and max pooling.
+        x = self.pool(F.relu(self.conv2(x)))
+        # Pass through Conv3, ReLU activation, and max pooling.
+        x = self.pool(F.relu(self.conv3(x)))
+        
+        # Flatten the tensor for the fully connected layers.
+        x = x.view(x.size(0), -1)
+        # Compute FC1 with ReLU.
+        x = F.relu(self.fc1(x))
+        # Compute output.
+        x = self.fc2(x)
+        return x
 
 class MLP(nn.Module):
     def __init__(self, input_size, num_hidden_layers, hidden_size, output_size):
