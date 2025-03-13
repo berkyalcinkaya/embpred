@@ -546,7 +546,7 @@ class CustomResNet18(nn.Module):
         return x
 
 class CustomResNet50(nn.Module):
-    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze=True, dropout_rate=0):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze_=True, dropout_rate=0):
         """
         Parameters:
             num_classes (int): Number of output classes.
@@ -561,7 +561,7 @@ class CustomResNet50(nn.Module):
         self.resnet = models.resnet50(pretrained=True)
         
         # Optionally freeze the ResNet-50 layers
-        if freeze:
+        if freeze_:
             for param in self.resnet.parameters():
                 param.requires_grad = False
         
