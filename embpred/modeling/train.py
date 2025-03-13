@@ -36,7 +36,7 @@ torch.cuda.empty_cache()
 MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 
 VAL_SIZE = 0.1
-TEST_SIZE = 0.1
+TEST_SIZE = 0.15
 KFOLDS = 1
 EPOCHS = 30
 LR = 0.0001
