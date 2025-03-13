@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-def get_class_weights(num_classes: int, noisy_classes: list, device: torch.device, weight_clean: float = 1.0, weight_noisy: float = 0.5) -> torch.FloatTensor:
+def get_class_weights(num_classes: int, noisy_classes: list, device: torch.device, weight_clean: float = 1.0, weight_noisy: float = 0.5, weight_dict=None) -> torch.FloatTensor:
     """
     Computes class weights for a weighted cross entropy loss.
     
@@ -15,20 +15,23 @@ def get_class_weights(num_classes: int, noisy_classes: list, device: torch.devic
         device (torch.device): Device to move the weights tensor to.
         weight_clean (float, optional): Weight to assign to non-noisy classes. Default is 1.0.
         weight_noisy (float, optional): Weight to assign to noisy classes. Default is 0.5.
+        weight_dict (dict, optional): Dictionary to assign custom weights to specific classes.
     
     Returns:
         torch.FloatTensor: A tensor of shape (num_classes,) containing the weights for each class.
     """
     weights = []
     for i in range(num_classes):
-        if i in noisy_classes:
+        if weight_dict is not None and i in weight_dict:
+            weights.append(weight_dict[i])
+        elif i in noisy_classes:
             weights.append(weight_noisy)
         else:
             weights.append(weight_clean)
     return torch.FloatTensor(weights).to(device)
 
 def weighted_cross_entropy_loss(num_classes: int, noisy_classes: list, device: torch.device,  weight_clean: float = 1.0,
-                                weight_noisy: float = 0.5) -> nn.CrossEntropyLoss:
+                                weight_noisy: float = 0.5, weight_dict = None) -> nn.CrossEntropyLoss:
     """
     Creates a weighted CrossEntropyLoss using class weights computed based on noisy classes.
     
@@ -38,6 +41,7 @@ def weighted_cross_entropy_loss(num_classes: int, noisy_classes: list, device: t
         device (torch.device): Device to move the weights tensor to.
         weight_clean (float, optional): Weight to assign to non-noisy classes. Default is 1.0.
         weight_noisy (float, optional): Weight to assign to noisy classes. Default is 0.5.
+        weight_dict (dict, optional): Dictionary to assign custom weights to specific classes.
     
     Returns:
         nn.CrossEntropyLoss: A PyTorch CrossEntropyLoss object that uses the computed class weights.

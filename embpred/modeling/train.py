@@ -85,8 +85,8 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("ResNet50Unfreeze-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "freeze_": False}),
-        ("ResNet50Unfreeze-CE-embSplits-balanced-0later", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
+        #("ResNet50Unfreeze-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50Unfreeze-weightCE-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
@@ -115,8 +115,7 @@ if __name__ == "__main__":
         assert(os.path.exists(dataset))
     
     for model_name, model_class, architecture_params in MODELS:
-        criterion = nn.CrossEntropyLoss() #weighted_cross_entropy_loss(13, [2,4,5,6,7,8,9], device, weight_noisy=0.2)#nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
-        
+        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,11,12], device, weight_noisy=0.5, weight_clean=1)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
