@@ -136,7 +136,8 @@ if __name__ == "__main__":
             #k_fold_splits = stratified_kfold_split(files, labels, n_splits=KFOLDS)
             embryos = list(embryo_names_to_files.keys())
             if DEBUG:
-                embryos = embryos[:2]
+                logger.info("DEBUG MODE: ONLY TRAINING ON 10 EMBRYOS")
+                embryos = embryos[:10]
             k_fold_splits = []
             k_fold_splits_by_embryo = kfold_split(embryos, n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=VAL_SIZE, test_size=TEST_SIZE)
             for train_embryos, val_embryos, test_embryos in k_fold_splits_by_embryo:
