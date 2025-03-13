@@ -1,3 +1,4 @@
+from gc import freeze
 from itertools import count
 from platform import architecture
 import random
@@ -43,7 +44,7 @@ LR = 0.0001
 WEIGHT_DECAY = 0.0001
 BATCH_SIZE = 64
 PRE_RANDOM_SAMPLE = None
-DO_REBALANCE = True
+DO_REBALANCE = False
 DEBUG = False
 if DEBUG:
     EPOCHS = 1
@@ -84,15 +85,16 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
+        ("Kalyani-ResNet50baseline", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": 64, freeze: False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer128-64", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
-        ("ResNet50-CE-embSplits-fullbalanced-3layer512-256-128", CustomResNet50, {"num_dense_layers": 3, "dense_neurons": [512,256,128]}),
+        #("ResNet50-CE-embSplits-fullbalanced-3layer512-256-128", CustomResNet50, {"num_dense_layers": 3, "dense_neurons": [512,256,128]}),
         # add drop out to all the models above
         #("ResNet50-CE-embSplits-fullbalanced-1layer64-dropout50", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "dropout":True, "dropout_rate":0.5}),
         #("ResNet50-CE-embSplits-fullbalanced-1layer128-dropout50", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128, "dropout":True, "dropout_rate":0.5}),
-        ("ResNet50-CE-embSplits-fullbalanced-2layer256-128-dropout50", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128], "dropout_rate":0.5})
+        #("ResNet50-CE-embSplits-fullbalanced-2layer256-128-dropout50", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128], "dropout_rate":0.5})
         #("ResNet50-CE-embSplits-fullbalanced-2layer128-64-dropout50", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64], "dropout":True, "dropout_rate":0.5})
 
         #("SimpleNet3D-weightLoss-embSplits", SimpleNet3D, {})

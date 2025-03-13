@@ -576,12 +576,13 @@ class CustomResNet50(nn.Module):
         # Build custom dense layers based on specified parameters.
         layers = []
         input_size = num_ftrs
-        for neurons in dense_neurons:
-            layers.append(nn.Linear(input_size, neurons))  # Fully connected layer
-            layers.append(nn.ReLU(inplace=True))
-            if dropout_rate > 0:
-                layers.append(nn.Dropout(dropout_rate))
-            input_size = neurons
+        if num_dense_layers > 0:
+            for neurons in dense_neurons:
+                layers.append(nn.Linear(input_size, neurons))  # Fully connected layer
+                layers.append(nn.ReLU(inplace=True))
+                if dropout_rate > 0:
+                    layers.append(nn.Dropout(dropout_rate))
+                input_size = neurons
         # Final output layer without any activation (CrossEntropyLoss includes softmax)
         layers.append(nn.Linear(input_size, num_classes))
         self.classifier = nn.Sequential(*layers)
