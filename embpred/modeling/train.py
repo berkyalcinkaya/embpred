@@ -84,7 +84,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-       ("ResNet50-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
+       ("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-2layer128-64", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
         #("ResNet50-CE-embSplits-2layer64-32", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [64,32]})
@@ -175,7 +175,7 @@ if __name__ == "__main__":
                 logger.info(f"Train: {len(train_ims)} | Val: {len(val_ims)} | Test: {len(test_ims)}")
 
                 if DO_REBALANCE:
-                    balancer = DataBalancer(train_ims, train_labels, T=2000, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                    balancer = DataBalancer(train_ims, train_labels, T=None, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()
