@@ -169,6 +169,7 @@ if __name__ == "__main__":
                 logger.info(f"Tensorboard output >> {log_dir}")
                 writer = SummaryWriter(log_dir=log_dir)
                 train_ims, train_labels, val_ims, val_labels, test_ims, test_labels = fold
+                print(test_labels)
                 has_test = len(test_ims) > 0
                 logger.info(f"Train: {len(train_ims)} | Val: {len(val_ims)} | Test: {len(test_ims)}")
 
