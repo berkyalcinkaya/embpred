@@ -7,6 +7,49 @@ from collections import OrderedDict
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
 
+class MLP(nn.Module):
+    def __init__(self, input_size, num_hidden_layers, hidden_size, output_size):
+        """
+        Parameters:
+            input_size (int): Size of the input features.
+            num_hidden_layers (int): Number of hidden layers. Must be at least 1.
+            hidden_size (int or list): If int, all hidden layers will have the same size.
+                                       If list, it must have length equal to num_hidden_layers.
+            output_size (int): Number of output classes.
+        """
+        super(MLP, self).__init__()
+        
+        if num_hidden_layers < 1:
+            raise ValueError("Must specify at least one hidden layer.")
+        
+        # If hidden_size is an integer, replicate it for each hidden layer.
+        if isinstance(hidden_size, int):
+            hidden_sizes = [hidden_size] * num_hidden_layers
+        elif isinstance(hidden_size, list):
+            if len(hidden_size) != num_hidden_layers:
+                raise ValueError("Length of hidden_size list must equal num_hidden_layers.")
+            hidden_sizes = hidden_size
+        else:
+            raise TypeError("hidden_size must be either an int or a list of ints.")
+        
+        layers = []
+        # First hidden layer: from input_size to first hidden layer size.
+        layers.append(nn.Linear(input_size, hidden_sizes[0]))
+        layers.append(nn.ReLU(inplace=True))
+        
+        # Additional hidden layers.
+        for i in range(1, num_hidden_layers):
+            layers.append(nn.Linear(hidden_sizes[i - 1], hidden_sizes[i]))
+            layers.append(nn.ReLU(inplace=True))
+        
+        # Output layer.
+        layers.append(nn.Linear(hidden_sizes[-1], output_size))
+        
+        self.model = nn.Sequential(*layers)
+    
+    def forward(self, x):
+        return self.model(x)
+
 class BigWNet(nn.Module):
     """
     W-Net implementation for image classification, adapted for 224 x 224 x 3 inputs.

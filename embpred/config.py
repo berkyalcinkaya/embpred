@@ -32,6 +32,7 @@ EMB_OUTLIER_COUNT = 400 # remove embryos with less than 400 images, see 06-EDA n
 RCNN_PATH = MODELS_DIR / "rcnn.pt"
 
 TEMPORAL_MAP_PATH = PROCESSED_DATA_DIR / "timepoint_mapping.json"
+MAP_PATH = RAW_DATA_DIR / "mappings.json"
 
 default_transforms = []
 
