@@ -43,12 +43,12 @@ LR = 0.0001
 WEIGHT_DECAY = 0.0001
 BATCH_SIZE = 64
 PRE_RANDOM_SAMPLE = None
-DO_REBALANCE = False
+DO_REBALANCE = True
 DEBUG = False
 if DEBUG:
     EPOCHS = 1
 EARLY_STOP_EPOCHS = 10
-REMOVE_DIR = True
+REMOVE_DIR = False
 
 
 model_mappings =  {
@@ -84,9 +84,9 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("ResNet50-CE-embSplits-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
-        ("ResNet50-CE-embSplits-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
-        ("ResNet50-CE-embSplits-2layer128-64", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
+       ("ResNet50-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64}),
+        #("ResNet50-CE-embSplits-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
+        #("ResNet50-CE-embSplits-2layer128-64", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [128,64]}),
         #("ResNet50-CE-embSplits-2layer64-32", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [64,32]})
         #("SimpleNet3D-weightLoss-embSplits", SimpleNet3D, {})
         #("Wnet-weight-noXaiver-embSplits", WNet, {"dropout":False, "dropout_rate":0.5, "do_xavier":False})
@@ -98,10 +98,9 @@ if __name__ == "__main__":
         #("CustomResNet18-1layer-full-balance", CustomResNet18, {"num_dense_layers": 1, "dense_neurons": 64, "input_shape": (3, 224, 224)}),
     ]
 
-
     mappings = load_mappings(pth=MAPPING_PATH)
     device = get_device()
-    datasets = [PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv", PROCESSED_DATA_DIR / "all-classes_carson-224-3depths-noCrop.csv"] # dataset prefixes determines which mapping to use
+    datasets = [PROCESSED_DATA_DIR / "all-classes_carson-224-3depths.csv"] #, PROCESSED_DATA_DIR / "all-classes_carson-224-3depths-noCrop.csv"] # dataset prefixes determines which mapping to use
     for dataset in datasets:
         assert(os.path.exists(dataset))
     

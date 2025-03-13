@@ -6,6 +6,7 @@ import random
 from venv import create
 from loguru import logger
 from requests import get
+from sympy import use
 import test
 from tqdm import tqdm
 import numpy as np
@@ -38,15 +39,19 @@ from skimage.io import imread
 from embpred.modeling.train_utils import write_data_split
 from sklearn.decomposition import PCA
 
-def train_log_reg(npz_file, weights=None, MAX_ITER=100):
+def train_log_reg(npz_file, weights=None, MAX_ITER=100, use_temporal=False):
     """"
     Trains a logistic regression model on the embeddings from the given npz file."
     """
 
     model_name = f"log_reg_{npz_file.split('.')[0]}"
+    if use_temporal:
+        model_name += "_temporal"
     if weights:
         model_name += "_weighted"
     model_dir = MODELS_DIR / model_name
+    if use_temporal:
+        model_dir = str(model_dir) +  "_temporal"
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
     
@@ -55,7 +60,10 @@ def train_log_reg(npz_file, weights=None, MAX_ITER=100):
 
     dataset = DATA_DIR / "resnet50_emb_noCrop.npz"
     data = np.load(dataset)
-    embeds = data["embeddings"]
+    if use_temporal:
+        embeds = data["embeddings_with_temporal"]
+    else:
+        embeds = data["embeddings"]
     labels = data["labels"]
     files = data["fnames"]
 
@@ -112,7 +120,7 @@ def train_log_reg(npz_file, weights=None, MAX_ITER=100):
     print()
 
     # Write the results to a file
-    with open(model_dir / "log_reg_results.txt", "w") as f:
+    with open(os.path.join("log_reg_results.txt"), "w") as f:
         f.write("Test Accuracy: {:.2f}%\n".format(test_acc * 100))
         f.write("Classification Report:\n")
         f.write(report)
@@ -120,13 +128,13 @@ def train_log_reg(npz_file, weights=None, MAX_ITER=100):
 
 
 def main():
-    npz_files = ["resnet50_emb_crop.npz", "resnet50_emb_noCrop.npz", "resnet50_emb_cropSingleDepth.npz"]
+    npz_files = ["resnet50_emb_crop.npz"] #, "resnet50_emb_noCrop.npz", "resnet50_emb_cropSingleDepth.npz"]
     for npz_file in npz_files:
         assert(os.path.exists(DATA_DIR / npz_file))
     model_acc = []
     for npz_file in npz_files:
-        for weight in [None, "balanced"]:
-            model_name, acc = train_log_reg(npz_file, weight, MAX_ITER=2000)
+        for weight in [None]:#, "balanced"]:
+            model_name, acc = train_log_reg(npz_file, weight, MAX_ITER=2000, use_temporal=True)
             model_acc.append((model_name, acc))
             print(model_name, acc)
     print(model_acc)
