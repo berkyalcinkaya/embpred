@@ -91,7 +91,7 @@ if __name__ == "__main__":
     DO_REBALANCE = False
     DEBUG = True
     if DEBUG:
-        EPOCHS = 2
+        EPOCHS = 1
 
 
     mappings = load_mappings(pth=MAPPING_PATH)
@@ -222,9 +222,10 @@ if __name__ == "__main__":
                     balancer.delete_augmentation()
                     del balancer
                 
-                del model, optimizer, criterion, train_loader, val_loader, train_data, val_data
+                del model, optimizer, train_loader, val_loader, train_data, val_data
             
             ### END of kFolds: Record model performance
+            logger.info("KFOLDS COMPLETE: REPORTING RESULTS...")
             model = model_class(num_classes=new_num_classes, **architecture_params)
             model.to(device)
             model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
@@ -233,7 +234,8 @@ if __name__ == "__main__":
             report_kfolds_results(model_dir, accs, aucs, macros, losses, conf_mats, KFOLDS)
             report_test_set_results(model_dir, test_micro, test_auc, test_macro, avg_loss, conf_mat)
             del test_micro, test_aucs, test_macro, avg_loss, conf_mat
-            del test_loader, test_data
+            del test_loader, test_data, criterion, model
+            torch.cuda.empty_cache()
 
             
             
