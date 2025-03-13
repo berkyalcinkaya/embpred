@@ -39,7 +39,7 @@ MAPPING_PATH = RAW_DATA_DIR / "mappings.json"
 VAL_SIZE = 0.1
 TEST_SIZE = 0.15
 KFOLDS = 1
-EPOCHS = 10
+EPOCHS = 20
 LR = 0.0001
 WEIGHT_DECAY = 0.0001
 BATCH_SIZE = 64
@@ -85,7 +85,8 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("Kalyani-ResNet50baseline", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": 64, "freeze_": False})
+        ("ResNet50Unfreeze-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50Unfreeze-CE-embSplits-balanced-0later", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
@@ -184,7 +185,7 @@ if __name__ == "__main__":
                 logger.info(f"Train: {len(train_ims)} | Val: {len(val_ims)} | Test: {len(test_ims)}")
 
                 if DO_REBALANCE:
-                    balancer = DataBalancer(train_ims, train_labels, T=None, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                    balancer = DataBalancer(train_ims, train_labels, T=2500, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()
