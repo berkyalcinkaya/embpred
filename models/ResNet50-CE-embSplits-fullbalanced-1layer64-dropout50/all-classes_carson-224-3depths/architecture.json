@@ -1,0 +1,6 @@
+{
+    "num_dense_layers": 1,
+    "dense_neurons": 64,
+    "dropout": true,
+    "dropout_rate": 0.5
+}
