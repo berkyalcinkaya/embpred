@@ -17,7 +17,7 @@ import shutil
 
 
 def write_data_split(train_embryos, val_embryos, test_embryos, loc=DATA_DIR):
-    with open(loc / "train_val_test_embryos.txt", "w") as f:
+    with open(os.path.join(str(loc), "train_val_test_embryos.txt"), "w") as f:
         f.write("train\n")
         for embryo in train_embryos:
             f.write(embryo + "\n")
