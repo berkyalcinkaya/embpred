@@ -89,6 +89,7 @@ if __name__ == "__main__":
     BATCH_SIZE = 64
     PRE_RANDOM_SAMPLE = None
     DO_REBALANCE = False
+    DEBUG = True
 
 
     mappings = load_mappings(pth=MAPPING_PATH)
@@ -121,7 +122,7 @@ if __name__ == "__main__":
             mapping = mappings[dataset.split("_")[0]]
             class_names_by_label = get_class_names_by_label(mapping)
             logger.info(class_names_by_label)
-            model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params)
+            model_dir = configure_model_dir(model_name, dataset, mapping, architecture=architecture_params, debug=DEBUG)
             logger.info(f"MODEL DIR: {model_dir}")
             
             # train model over k-folds, record performance

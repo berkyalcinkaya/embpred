@@ -41,7 +41,7 @@ def write_aucs_by_class(aucs, epoch, writer, mode="Train", mappings=None):
             class_name = f"class{i}"
         writer.add_scalar(f"Metrics/{mode}_AUC_{class_name}", auc, epoch)
         
-def configure_model_dir(model_name, dataset_name, mapping, architecture=None, additional_ids = None):
+def configure_model_dir(model_name, dataset_name, mapping, architecture=None, additional_ids = None, debug=False):
     """
     Configures a directory for the model based on its class name and dataset name.
     
@@ -51,6 +51,8 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
     - mapping: A dictionary containing mappings that need to be saved.
     - architecture: a dictionary containing the architecture of the model
     - additional_ids: a list of additional info that will form subdirectories
+    - debug: a boolean flag that specifies whether the model is being trained in debug mode, if so
+            model_dir is deleted if it already exists
 
     Returns:
     - new_model_dir: The path to the newly created model directory.
@@ -65,8 +67,13 @@ def configure_model_dir(model_name, dataset_name, mapping, architecture=None, ad
             new_model_dir = os.path.join(new_model_dir, id)
 
     if os.path.exists(new_model_dir):
-        raise ValueError(f"{new_model_dir} exists: {model_name} has already been trained with dataset {dataset_name}")
-    os.makedirs(new_model_dir)
+        if debug:
+            logger.info(f"Deleting {new_model_dir}")
+            os.rmdir(new_model_dir)
+        else:
+            raise ValueError(f"{new_model_dir} exists: {model_name} has already been trained with dataset {dataset_name}")
+    else:
+        os.makedirs(new_model_dir)
     mapping_file_path = os.path.join(new_model_dir, 'mapping.json')
     with open(mapping_file_path, 'w') as json_file:
         json.dump(mapping, json_file, indent=4)
