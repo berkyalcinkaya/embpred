@@ -1,5 +1,7 @@
 # Data
 /data/
+*.npz
+*.npy
 *.pt
 *.pth
 # Mac OS-specific storage files
