@@ -169,7 +169,6 @@ if __name__ == "__main__":
                 logger.info(f"Tensorboard output >> {log_dir}")
                 writer = SummaryWriter(log_dir=log_dir)
                 train_ims, train_labels, val_ims, val_labels, test_ims, test_labels = fold
-                print(test_labels)
                 has_test = len(test_ims) > 0
                 logger.info(f"Train: {len(train_ims)} | Val: {len(val_ims)} | Test: {len(test_ims)}")
 
@@ -191,6 +190,13 @@ if __name__ == "__main__":
                 train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
                 val_loader = DataLoader(val_data, batch_size=BATCH_SIZE, num_workers=4)
                 test_loader = DataLoader(test_data, batch_size=BATCH_SIZE, num_workers=4)
+
+                # check test loader
+                if DEBUG:
+                    if has_test:
+                        for i, (images, labels) in enumerate(test_loader):
+                            logger.info(f"TEST LOADER: {images.shape} | {labels.shape}")
+                            break
 
                 new_num_classes = train_data.get_num_classes()
                 logger.info(f"NUM CLASSES: {new_num_classes}")
