@@ -110,10 +110,11 @@ if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
         ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-0layer", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
-        ("ResNet50UnfreezeTIndexAtt-weightCE-embSplits-fullbalanced-0layer", ResNet50TIndexAttention, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-0layer-smallerPosition", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 64, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-0layer-smallestPosition", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 14, "dense_neurons": 64, "freeze_": False}),
         ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 1, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
-        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-2layer258,128", ResNet50TIndexBasic, {"num_dense_layers": 2, "scalar_emb_dim": 128, "dense_neurons": [256,128], "freeze_": False}),
-        ("ResNet50UnfreezeTIndexAtt-weightCE-embSplits-fullbalanced-2layer258,128", ResNet50TIndexAttention, {"num_dense_layers": 2, "scalar_emb_dim": 128, "dense_neurons": [256,128], "freeze_": False})
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-2layer256,128", ResNet50TIndexBasic, {"num_dense_layers": 2, "scalar_emb_dim": 128, "dense_neurons": [256,128], "freeze_": False})
+
 
 
         #("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
