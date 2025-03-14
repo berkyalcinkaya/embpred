@@ -14,7 +14,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 class ResNet50TIndexBasic(nn.Module):
-    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze=True, dropout_rate=0, scalar_emb_dim=128):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze_=True, dropout_rate=0, scalar_emb_dim=128):
         """
         A model that fuses image features with a scalar input via naive concatenation.
         
@@ -30,7 +30,7 @@ class ResNet50TIndexBasic(nn.Module):
         super(ResNet50TIndexBasic, self).__init__()
         # Load the pretrained ResNet-50 model.
         self.resnet = models.resnet50(pretrained=True)
-        if freeze:
+        if freeze_:
             for param in self.resnet.parameters():
                 param.requires_grad = False
         # Get the number of features from ResNet and remove its final FC layer.
