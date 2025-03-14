@@ -45,14 +45,16 @@ class ResNet50TIndexBasic(nn.Module):
         layers = []
         input_size = num_ftrs + scalar_emb_dim
         # If a single integer is provided for dense_neurons, replicate it for num_dense_layers layers.
-        if isinstance(dense_neurons, int):
+        if isinstance(dense_neurons, int) and num_dense_layers > 0:
             dense_neurons = [dense_neurons] * num_dense_layers
-        for neurons in dense_neurons:
-            layers.append(nn.Linear(input_size, neurons))
-            layers.append(nn.ReLU(inplace=True))
-            if dropout_rate > 0:
-                layers.append(nn.Dropout(dropout_rate))
-            input_size = neurons
+        
+        if num_dense_layers > 0:
+            for neurons in dense_neurons:
+                layers.append(nn.Linear(input_size, neurons))
+                layers.append(nn.ReLU(inplace=True))
+                if dropout_rate > 0:
+                    layers.append(nn.Dropout(dropout_rate))
+                input_size = neurons
         # Final output layer (no softmax, e.g., for CrossEntropyLoss).
         layers.append(nn.Linear(input_size, num_classes))
         self.classifier = nn.Sequential(*layers)

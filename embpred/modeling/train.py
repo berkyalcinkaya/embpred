@@ -18,7 +18,7 @@ import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR, RANDOM_STATE, TEMPORAL_MAP_PATH
 from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
-                                    BiggerNet3D224, SmallerNet3D224, WNet, BigWNet)
+                                    BiggerNet3D224, SmallerNet3D224, WNet, BigWNet, ResNet50TIndexBasic)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, kfold_split,
                             load_mappings, get_class_names_by_label, 
@@ -109,8 +109,8 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        #("ResNet50Unfreeze-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "freeze_": False}),
-        ("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
+        ("ResNet50UnfreezeTIndex-CE-embSplits-balanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        #("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         assert(os.path.exists(dataset))
     
     for model_name, model_class, architecture_params in MODELS:
-        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=None)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = nn.CrossEntropyLoss()#weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=None)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
