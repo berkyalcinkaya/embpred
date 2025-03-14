@@ -18,6 +18,7 @@ from embpred.config import EMB_OUTLIER_COUNT
 from embpred.data.my_transforms import ShuffleColor
 plt.rcParams["savefig.bbox"] = 'tight'
 from torchvision import transforms as v2
+from embpred.modeling.utils import recover_original_filename
 
 def process_embryo_split(embryo_names_to_files, embryo_names_to_labels, train_embryos, 
                          val_embryos, test_embryos, merge_train_val=False, no_test=False):
@@ -226,7 +227,8 @@ def get_basic_transforms():
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, img_paths, img_labels, num_classes, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, do_normalize=True, check_exists=True):
+    def __init__(self, img_paths, img_labels, num_classes, img_transform=None, encode_labels = True, num_channels=1, channel_idx=None, 
+                 do_normalize=True, check_exists=True, multimodal=False, multimodal_map=None):
         self.img_paths = img_paths
         if check_exists:
             num_exists = 0
@@ -255,6 +257,9 @@ class CustomImageDataset(Dataset):
                 torch.zeros(self.num_classes, dtype=torch.float).scatter_(0, torch.tensor(y), value=1))
         else:
             self.label_transform = None
+        
+        self.multi_modal = multimodal
+        self.multi_modal_map = multimodal_map
 
     def __len__(self):
         return len(self.img_labels)
@@ -283,7 +288,13 @@ class CustomImageDataset(Dataset):
         if self.encode_labels:
             label = self.label_transform(label)
         
-        return image, label
+        if self.multi_modal and self.multi_modal_map is not None:
+            fname = recover_original_filename(img_path)
+            assert(fname in self.multi_modal_map)
+            additional_val = self.multi_modal_map[fname]
+            return image, additional_val, label
+        else:
+            return image, label
     
     def get_labels(self):
         return self.img_labels

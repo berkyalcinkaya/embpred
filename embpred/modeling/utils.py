@@ -3,6 +3,28 @@ import csv
 import os
 from loguru import logger
 
+def recover_original_filename(augmented_filename: str) -> str:
+    """
+    Recover the original image filename from an augmented filename.
+    
+    The augmented filename is assumed to have the format:
+        <base_name>-aug<augmentation_number><extension>
+    For example, "image1-aug1.jpg" becomes "image1.jpg".
+    
+    If the filename does not follow this pattern, it is returned unchanged.
+    
+    Parameters:
+        augmented_filename (str): The augmented image file name.
+    
+    Returns:
+        str: The original image file name.
+    """
+    base_name, ext = os.path.splitext(os.path.basename(augmented_filename))
+    if "-aug" in base_name:
+        original_base = base_name.split("-aug")[0]
+        return original_base + ext
+    return augmented_filename
+
  # Calculate average metrics
 def report_kfolds_results(model_dir, accs, aucs, macros, losses, accum_conf_mat, kfolds):
     avg_acc = np.mean(accs)

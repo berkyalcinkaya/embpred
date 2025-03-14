@@ -107,7 +107,7 @@ def get_device():
 
 def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss, use_nni, train_test_interval, test_interval, 
                        epochs, writer: SummaryWriter, best_model_path=None, class_names=None, do_early_stop=False,
-                       early_stop_epochs=None):
+                       early_stop_epochs=None, multimodal=False):
     """
     Trains the model and evaluates its performance at specified intervals.
 
@@ -131,6 +131,7 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
     - do_early_stop (bool, default False): whether to implement an early stopping callback. If true, user should specify early_stop_epochs
     - early_stop_epochs (Optional int): maximum number of epochs since model improvement in terms of test_auc before training is cut short. 
                                         Only used if do_early_stop is set to True
+    - multimodal (bool, default False): whether the model is multimodal. If true, the model is trained on multiple modalities.
 
     Returns:
     - Tuple containing mean accuracy, AUC, macro F1-score, and loss over the test intervals.
@@ -150,9 +151,15 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         
         loss_all = 0
         for data in tqdm(train_loader):
-            inputs, labels = data[0].to(device), data[1].to(device)
+            if multimodal:
+                input1, input2, labels = data[0].to(device), data[1].to(device), data[2].to(device)
+                inputs = (input1, input2)
+            else:
+                inputs, labels = data[0].to(device), data[1].to(device)
+                inputs = (inputs,)
+            
             optimizer.zero_grad()
-            out = model(inputs)
+            out = model(*inputs)
 
             loss_value = loss(out, labels)
             loss_value.backward()
@@ -167,7 +174,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
         writer.add_scalar('Loss/train', epoch_loss, i)
         train_loss_str = f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}'
         if (i + 1) % train_test_interval == 0:
-            train_micro, train_aucs, train_macro, _, _ = evaluate(model, device, train_loader, get_conf_mat=False)
+            train_micro, train_aucs, train_macro, _, _ = evaluate(model, device, train_loader, get_conf_mat=False, 
+                                                                  multimodal=multimodal)
             train_auc = np.mean(train_aucs)
             logger.info(f'{train_loss_str}, '
                         f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
@@ -182,7 +190,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
 
         # Evaluate the model on the test set if the test interval is reached
         if (i + 1) % test_interval == 0:
-            test_micro, test_aucs, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss=loss, get_conf_mat=False)
+            test_micro, test_aucs, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss=loss, get_conf_mat=False, 
+                                                                       multimodal=multimodal)
             
             test_auc = np.mean(test_aucs)
             if test_auc > best_auc:
@@ -220,7 +229,8 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, loss
 
 
 @torch.no_grad()
-def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils.data.DataLoader] = None, get_conf_mat:Optional[bool]=True) -> tuple:
+def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils.data.DataLoader] = None, 
+             get_conf_mat:Optional[bool]=True, multimodal=False) -> tuple:
     """
     Evaluates the model on the provided data loader.
 
@@ -231,7 +241,8 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     - loss: criterion to calculate average loss function, if provided
     - test_loader: Optional DataLoader for an additional test set. If provided, both train and test metrics will be returned.
     - get_conf_mat: boolean flag that specifies whether or not a confusion matrix should be return. Default, True (confusion matrix returned)
-
+    - multimodal: boolean flag that specifies whether the model is multimodal. Default, False (model is not multimodal)
+    
     Returns:
     - If test_loader is None, returns a tuple containing (train_micro, train_aucs, train_macro, avg_loss, conf_mat).
     - If test_loader is provided, returns a tuple containing (train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, avg_loss, conf_mat).
@@ -245,8 +256,13 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     loss_all = 0
 
     for data in loader:
-        inputs, labels = data[0].to(device), data[1].to(device)
-        c = model(inputs)
+        if multimodal:
+            input1, input2, labels = data[0].to(device), data[1].to(device), data[2].to(device)
+            inputs = (input1, input2)
+        else:
+            inputs, labels = data[0].to(device), data[1].to(device)
+            inputs = (inputs,)
+        c = model(*inputs)
         
         if loss is not None:
             loss_value = loss(c, labels)
@@ -290,7 +306,7 @@ def evaluate(model, device, loader, loss=None, test_loader: Optional[torch.utils
     train_macro = metrics.f1_score(trues, preds, average='macro')
 
     if test_loader is not None:
-        test_micro, test_auc, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss)
+        test_micro, test_auc, test_macro, test_loss, _ = evaluate(model, device, test_loader, loss, multimodal=multimodal)
         return train_micro, train_aucs, train_macro, test_micro, test_auc, test_macro, epoch_loss, conf_mat
     else:
         return train_micro, train_aucs, train_macro, epoch_loss, conf_mat

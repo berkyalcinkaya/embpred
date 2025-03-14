@@ -8,6 +8,158 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters())
  
 
+
+import torch
+import torch.nn as nn
+import torchvision.models as models
+
+class ResNet50TIndexBasic(nn.Module):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze=True, dropout_rate=0, scalar_emb_dim=128):
+        """
+        A model that fuses image features with a scalar input via naive concatenation.
+        
+        Parameters:
+            num_classes (int): Number of output classes.
+            num_dense_layers (int): Number of custom dense layers to add.
+            dense_neurons (int or list): If int, all dense layers will have the same number of neurons.
+                                          If list, it must have length equal to num_dense_layers.
+            freeze (bool): If True, freeze the pretrained ResNet-50 layers.
+            dropout_rate (float): Dropout rate to apply after each dense layer.
+            scalar_emb_dim (int): The dimensionality of the embedding for the scalar input.
+        """
+        super(ResNet50TIndexBasic, self).__init__()
+        # Load the pretrained ResNet-50 model.
+        self.resnet = models.resnet50(pretrained=True)
+        if freeze:
+            for param in self.resnet.parameters():
+                param.requires_grad = False
+        # Get the number of features from ResNet and remove its final FC layer.
+        num_ftrs = self.resnet.fc.in_features  # Typically 2048 for ResNet-50.
+        self.resnet.fc = nn.Identity()  # Replace the final FC layer with an identity.
+        
+        # Process the scalar input.
+        self.scalar_fc = nn.Linear(1, scalar_emb_dim)
+        
+        # Build custom classifier layers.
+        # The first layer now takes as input the concatenation of the image features and the scalar embedding.
+        layers = []
+        input_size = num_ftrs + scalar_emb_dim
+        # If a single integer is provided for dense_neurons, replicate it for num_dense_layers layers.
+        if isinstance(dense_neurons, int):
+            dense_neurons = [dense_neurons] * num_dense_layers
+        for neurons in dense_neurons:
+            layers.append(nn.Linear(input_size, neurons))
+            layers.append(nn.ReLU(inplace=True))
+            if dropout_rate > 0:
+                layers.append(nn.Dropout(dropout_rate))
+            input_size = neurons
+        # Final output layer (no softmax, e.g., for CrossEntropyLoss).
+        layers.append(nn.Linear(input_size, num_classes))
+        self.classifier = nn.Sequential(*layers)
+    
+    def forward(self, image, scalar):
+        """
+        Forward pass for the ResNet50TIndexBasic model.
+        
+        Parameters:
+            image (Tensor): The input image tensor.
+            scalar (Tensor): The scalar input tensor (e.g., normalized time or frame index).
+            
+        Returns:
+            Tensor: The logits for classification.
+        """
+        # Process image through the ResNet-50 backbone.
+        x_img = self.resnet(image)  # Shape: [batch_size, 2048]
+        x_img = torch.flatten(x_img, 1)
+        
+        # Process the scalar input.
+        # Ensure scalar has shape [batch_size, 1].
+        if scalar.dim() == 1:
+            scalar = scalar.unsqueeze(1)
+        x_scalar = self.scalar_fc(scalar)  # Shape: [batch_size, scalar_emb_dim]
+        
+        # Naively concatenate the image features and scalar embedding.
+        x = torch.cat([x_img, x_scalar], dim=1)  # Shape: [batch_size, 2048 + scalar_emb_dim]
+        x = self.classifier(x)
+        return x
+
+class ResNet50TIndexAttention(nn.Module):
+    def __init__(self, num_classes, num_dense_layers, dense_neurons, freeze=True, dropout_rate=0, scalar_emb_dim=128):
+        """
+        A model that fuses image features with a scalar input using an attention/gating mechanism.
+        
+        The scalar input is first embedded, then used to compute an attention gate that modulates 
+        the image features before the features are concatenated with the scalar embedding.
+        
+        Parameters:
+            num_classes (int): Number of output classes.
+            num_dense_layers (int): Number of custom dense layers to add.
+            dense_neurons (int or list): If int, all dense layers will have the same number of neurons.
+                                          If list, it must have length equal to num_dense_layers.
+            freeze (bool): If True, freeze the pretrained ResNet-50 layers.
+            dropout_rate (float): Dropout rate to apply after each dense layer.
+            scalar_emb_dim (int): The dimensionality of the embedding for the scalar input.
+        """
+        super(ResNet50TIndexAttention, self).__init__()
+        # Load the pretrained ResNet-50 model.
+        self.resnet = models.resnet50(pretrained=True)
+        if freeze:
+            for param in self.resnet.parameters():
+                param.requires_grad = False
+        num_ftrs = self.resnet.fc.in_features  # 2048 for ResNet-50.
+        self.resnet.fc = nn.Identity()  # Remove final FC layer.
+        
+        # Process the scalar input.
+        self.scalar_fc = nn.Linear(1, scalar_emb_dim)
+        # Attention mechanism: use the scalar embedding to generate a gate for the image features.
+        self.att_gate = nn.Linear(scalar_emb_dim, num_ftrs)
+        
+        # Build custom classifier layers.
+        # Input is the concatenation of the gated image features and the scalar embedding.
+        layers = []
+        input_size = num_ftrs + scalar_emb_dim
+        if isinstance(dense_neurons, int):
+            dense_neurons = [dense_neurons] * num_dense_layers
+        for neurons in dense_neurons:
+            layers.append(nn.Linear(input_size, neurons))
+            layers.append(nn.ReLU(inplace=True))
+            if dropout_rate > 0:
+                layers.append(nn.Dropout(dropout_rate))
+            input_size = neurons
+        layers.append(nn.Linear(input_size, num_classes))
+        self.classifier = nn.Sequential(*layers)
+    
+    def forward(self, image, scalar):
+        """
+        Forward pass for the ResNet50TIndexAttention model.
+        
+        Parameters:
+            image (Tensor): The input image tensor.
+            scalar (Tensor): The scalar input tensor (e.g., normalized time or frame index).
+            
+        Returns:
+            Tensor: The logits for classification.
+        """
+        # Process image through the ResNet-50 backbone.
+        x_img = self.resnet(image)  # Shape: [batch_size, 2048]
+        x_img = torch.flatten(x_img, 1)
+        
+        # Process the scalar input.
+        if scalar.dim() == 1:
+            scalar = scalar.unsqueeze(1)
+        x_scalar = self.scalar_fc(scalar)  # Shape: [batch_size, scalar_emb_dim]
+        
+        # Compute the attention gate from the scalar embedding.
+        gate = torch.sigmoid(self.att_gate(x_scalar))  # Shape: [batch_size, 2048]
+        # Apply the gate to the image features.
+        x_img_att = x_img * gate
+        
+        # Concatenate the gated image features with the scalar embedding.
+        x = torch.cat([x_img_att, x_scalar], dim=1)  # Shape: [batch_size, 2048 + scalar_emb_dim]
+        x = self.classifier(x)
+        return x
+
+
 class AlexNet(nn.Module):
     def __init__(self, num_classes=1000):
         super(AlexNet, self).__init__()

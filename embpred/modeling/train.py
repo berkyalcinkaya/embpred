@@ -11,11 +11,12 @@ import numpy as np
 from glob import glob
 import os
 import torch
+import json
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
-from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR, RANDOM_STATE
+from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR, RANDOM_STATE, TEMPORAL_MAP_PATH
 from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
                                     BiggerNet3D224, SmallerNet3D224, WNet, BigWNet)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
@@ -45,11 +46,17 @@ WEIGHT_DECAY = 0.0001
 BATCH_SIZE = 64
 PRE_RANDOM_SAMPLE = None
 DO_REBALANCE = True
-DEBUG = False
+DEBUG = True
 if DEBUG:
     EPOCHS = 1
 EARLY_STOP_EPOCHS = 10
 REMOVE_DIR = True
+MULTIMODAL = True
+
+if MULTIMODAL:
+    temporal_map = json.load(open(TEMPORAL_MAP_PATH))
+else: 
+    temporal_map = None
 
 
 WEIGHT_DICT = {
@@ -140,10 +147,14 @@ if __name__ == "__main__":
             embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
             logger.info(f"# EMBRYOS: {len(embryo_names_to_files)}")
 
+
+
             if PRE_RANDOM_SAMPLE:
                 # from each class, randomly sample PRE_RANDOM_SAMPLE images
                 # if a class has less than PRE_RANDOM_SAMPLE images, sample all, 
                 # print out the number of images per class, and if the class has less than PRE_RANDOM_SAMPLE
+                if MULTIMODAL:
+                    raise ValueError("MULTIMODAL NOT SUPPORTED FOR RANDOM SAMPLING")
                 logger.info(f"PRE-SAMPLING: {PRE_RANDOM_SAMPLE}")
                 files, labels = do_random_sample(PRE_RANDOM_SAMPLE, files, labels)
 
@@ -209,10 +220,14 @@ if __name__ == "__main__":
                 else:
                     train_ims_new, train_labels_new = train_ims, train_labels
                 
+
                 train_data = CustomImageDataset(train_ims_new, train_labels_new, num_classes,
-                                                img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
-                val_data = CustomImageDataset(val_ims, val_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
-                test_data = CustomImageDataset(test_ims, test_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3)
+                                                img_transform=get_transforms(image_net_transforms=is_res_net), num_channels=3, 
+                                                multimodal=MULTIMODAL, multimodal_map=temporal_map)
+                val_data = CustomImageDataset(val_ims, val_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), 
+                                              num_channels=3, multimodal=MULTIMODAL, multimodal_map=temporal_map)
+                test_data = CustomImageDataset(test_ims, test_labels, num_classes, img_transform=get_transforms(image_net_transforms=is_res_net), 
+                                               num_channels=3, multimodal=MULTIMODAL, multimodal_map=temporal_map)
 
 
                 train_loader = DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
