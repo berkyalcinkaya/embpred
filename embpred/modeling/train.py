@@ -256,10 +256,11 @@ if __name__ == "__main__":
                                                                     optimizer, device, criterion, False, 1, 1,
                                                                     EPOCHS, writer, best_model_path=model_save_path, 
                                                                     class_names=class_names_by_label, early_stop_epochs=EARLY_STOP_EPOCHS, 
-                                                                    do_early_stop=True)
+                                                                    do_early_stop=True, multimodal=MULTIMODAL)
                 # load best model and evaluate
                 model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
-                val_micro, val_aucs, val_macro, avg_loss, conf_mat = evaluate(model, device, val_loader, loss=criterion, get_conf_mat=True)
+                val_micro, val_aucs, val_macro, avg_loss, conf_mat = evaluate(model, device, val_loader, loss=criterion, get_conf_mat=True,
+                                                                              multimodal=MULTIMODAL)
                 val_auc=np.mean(val_aucs)
                 
                 logger.info(f'(Initial Performance Last Epoch) | test_loss={avg_loss:.4f} | test_micro={(val_micro * 100):.2f}, '
@@ -282,7 +283,8 @@ if __name__ == "__main__":
             model = model_class(num_classes=num_classes, **architecture_params)
             model.to(device)
             model.load_state_dict(torch.load(model_save_path)['model_state_dict'])
-            test_micro, test_aucs, test_macro, avg_loss, conf_mat = evaluate(model, device, test_loader, loss=criterion, get_conf_mat=True)
+            test_micro, test_aucs, test_macro, avg_loss, conf_mat = evaluate(model, device, test_loader, loss=criterion, get_conf_mat=True,
+                                                                              multimodal=MULTIMODAL)
             test_auc = np.mean(test_aucs)
             report_kfolds_results(model_dir, accs, aucs, macros, losses, conf_mats, KFOLDS)
             report_test_set_results(model_dir, test_micro, test_auc, test_macro, avg_loss, conf_mat)
