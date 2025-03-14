@@ -293,6 +293,9 @@ class CustomImageDataset(Dataset):
             if fname not in self.multi_modal_map:
                 raise ValueError(f"File {fname} not found in multi_modal_map.")
             additional_val = self.multi_modal_map[fname]
+            # convert additonal_val to a torch float value
+            additional_val = torch.tensor(additional_val, dtype=torch.float)
+
             return image, additional_val, label
         else:
             return image, label
