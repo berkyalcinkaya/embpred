@@ -109,7 +109,7 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("ResNet50UnfreezeTIndex-CE-embSplits-balanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndex-CE-embSplits-balanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False})
         #("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
