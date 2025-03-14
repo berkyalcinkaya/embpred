@@ -109,7 +109,13 @@ def do_random_sample(PRE_RANDOM_SAMPLE, files, labels):
 if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
-        ("ResNet50UnfreezeTIndex-CE-embSplits-balanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False})
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-0layer", ResNet50TIndexBasic, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndexAtt-weightCE-embSplits-fullbalanced-0layer", ResNet50TIndexAttention, {"num_dense_layers": 0, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-1layer64", ResNet50TIndexBasic, {"num_dense_layers": 1, "scalar_emb_dim": 128, "dense_neurons": 64, "freeze_": False}),
+        ("ResNet50UnfreezeTIndex-weightCE-embSplits-fullbalanced-2layer258,128", ResNet50TIndexBasic, {"num_dense_layers": 2, "scalar_emb_dim": 128, "dense_neurons": [256,128], "freeze_": False}),
+        ("ResNet50UnfreezeTIndexAtt-weightCE-embSplits-fullbalanced-2layer258,128", ResNet50TIndexAttention, {"num_dense_layers": 2, "scalar_emb_dim": 128, "dense_neurons": [256,128], "freeze_": False})
+
+
         #("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
@@ -139,7 +145,7 @@ if __name__ == "__main__":
         assert(os.path.exists(dataset))
     
     for model_name, model_class, architecture_params in MODELS:
-        criterion = nn.CrossEntropyLoss()#weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=None)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10,11,12], device, weight_dict=None)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
@@ -217,7 +223,7 @@ if __name__ == "__main__":
                 logger.info(f"Train: {len(train_ims)} | Val: {len(val_ims)} | Test: {len(test_ims)}")
 
                 if DO_REBALANCE:
-                    balancer = DataBalancer(train_ims, train_labels, T=2500, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
+                    balancer = DataBalancer(train_ims, train_labels, T=None, quartile=0.75, undersample=True, oversample=True, transforms=get_basic_transforms(),
                                             aug_dir= INTERIM_DATA_DIR / "aug")
                     balancer.print_before_and_after()
                     train_ims_new = balancer.balanced_img_paths()
