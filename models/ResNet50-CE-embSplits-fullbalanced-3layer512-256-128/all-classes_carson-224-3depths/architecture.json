@@ -1,0 +1,8 @@
+{
+    "num_dense_layers": 3,
+    "dense_neurons": [
+        512,
+        256,
+        128
+    ]
+}

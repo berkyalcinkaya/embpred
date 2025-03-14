@@ -1,0 +1,5 @@
+Metric,Value
+Micro Avg (%),0.79
+AUC (%),0.97
+Macro Avg (%),0.63
+Loss,0.01

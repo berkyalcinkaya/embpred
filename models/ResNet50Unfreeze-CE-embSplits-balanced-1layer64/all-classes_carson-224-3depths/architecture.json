@@ -1,0 +1,5 @@
+{
+    "num_dense_layers": 1,
+    "dense_neurons": 64,
+    "freeze_": false
+}
