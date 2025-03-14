@@ -23,7 +23,7 @@ def recover_original_filename(augmented_filename: str) -> str:
     if "-aug" in base_name:
         original_base = base_name.split("-aug")[0]
         return original_base + ext
-    return augmented_filename
+    return os.path.basename(augmented_filename)
 
  # Calculate average metrics
 def report_kfolds_results(model_dir, accs, aucs, macros, losses, accum_conf_mat, kfolds):
