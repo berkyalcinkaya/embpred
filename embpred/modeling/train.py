@@ -54,17 +54,17 @@ REMOVE_DIR = True
 
 WEIGHT_DICT = {
     0: 1.0,
-    1: 0.8,
-    2: 0.6,
-    3: 1.0,
+    1: 0.5,
+    2: 0.5,
+    3: 0.5,
     4: 0.5,
-    5: 0.9,
-    6: 0.4,
+    5: 0.5,
+    6: 0.5,
     7: 0.5,
-    8: 0.6,
+    8: 0.7,
     9: 0.7,
-    10: 0.8,
-    11: 0.8,
+    10: 0.7,
+    11: 0.7,
     12: 0.9,
     13: 1.0
 }
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # Define the models to train with 
     MODELS = [
         #("ResNet50Unfreeze-CE-embSplits-balanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64, "freeze_": False}),
-        ("ResNet50Unfreeze-weightCE-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
+        ("ResNet50Unfreeze-weightCE2-embSplits-balanced-0layer", CustomResNet50, {"num_dense_layers": 0, "dense_neurons": True, "freeze_": False})
        #("ResNet50-CE-embSplits-fullbalanced-1layer64", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 64})
         #("ResNet50-CE-embSplits-fullbalanced-1layer128", CustomResNet50, {"num_dense_layers": 1, "dense_neurons": 128}),
         #("ResNet50-CE-embSplits-fullbalanced-2layer256-128", CustomResNet50, {"num_dense_layers": 2, "dense_neurons": [256,128]}),
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         assert(os.path.exists(dataset))
     
     for model_name, model_class, architecture_params in MODELS:
-        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=WEIGHT_DICT)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
+        criterion = weighted_cross_entropy_loss(14, [1,2,4,6,7,8,9,10, 11,12], device, weight_dict=None)  # nn.CrossEntropyLoss() # #nn.CrossEntropyLoss()#(14, classes_to_drop, weight_clean=1.0, weight_noisy=0.5)
         is_res_net = "ResNet" in model_name
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
