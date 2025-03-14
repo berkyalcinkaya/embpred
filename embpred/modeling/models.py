@@ -120,14 +120,16 @@ class ResNet50TIndexAttention(nn.Module):
         # Input is the concatenation of the gated image features and the scalar embedding.
         layers = []
         input_size = num_ftrs + scalar_emb_dim
-        if isinstance(dense_neurons, int):
+        if isinstance(dense_neurons, int) and num_dense_layers > 0:
             dense_neurons = [dense_neurons] * num_dense_layers
-        for neurons in dense_neurons:
-            layers.append(nn.Linear(input_size, neurons))
-            layers.append(nn.ReLU(inplace=True))
-            if dropout_rate > 0:
-                layers.append(nn.Dropout(dropout_rate))
-            input_size = neurons
+        
+        if num_dense_layers > 0:
+            for neurons in dense_neurons:
+                layers.append(nn.Linear(input_size, neurons))
+                layers.append(nn.ReLU(inplace=True))
+                if dropout_rate > 0:
+                    layers.append(nn.Dropout(dropout_rate))
+                input_size = neurons
         layers.append(nn.Linear(input_size, num_classes))
         self.classifier = nn.Sequential(*layers)
     

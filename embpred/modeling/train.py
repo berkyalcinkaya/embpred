@@ -18,7 +18,7 @@ import torch.nn as nn
 from torchsampler import ImbalancedDatasetSampler
 from embpred.config import INTERIM_DATA_DIR, MODELS_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR, RANDOM_STATE, TEMPORAL_MAP_PATH
 from embpred.modeling.models import (BiggestNet3D224, SmallerNet3D224, count_parameters, SimpleNet3D, CustomResNet18, CustomResNet50, 
-                                    BiggerNet3D224, SmallerNet3D224, WNet, BigWNet, ResNet50TIndexBasic)
+                                    BiggerNet3D224, SmallerNet3D224, WNet, BigWNet, ResNet50TIndexBasic, ResNet50TIndexAttention)
 from embpred.data.dataset import (get_basic_transforms, CustomImageDataset, get_data_from_dataset_csv, 
                             get_filename_no_ext, stratified_kfold_split, kfold_split,
                             load_mappings, get_class_names_by_label, 
