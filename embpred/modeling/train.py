@@ -144,9 +144,15 @@ if __name__ == "__main__":
         logger.info(f"MODEL: {model_name} | IS_RESNET: {is_res_net}")
         for dataset in datasets:
             files, labels = get_data_from_dataset_csv(dataset)
+
+            for file in files:
+                if os.path.basename(file) not in temporal_map:
+                    print(f"File {file} not in temporal map")
+                    raise FileNotFoundError(f"File {file} not in temporal map")
+
+
             embryo_names_to_files, embryo_names_to_count, embryo_names_to_labels = get_embryo_names_by_from_files(files, labels)
             logger.info(f"# EMBRYOS: {len(embryo_names_to_files)}")
-
 
 
             if PRE_RANDOM_SAMPLE:
@@ -180,7 +186,6 @@ if __name__ == "__main__":
             k_fold_splits = []
             k_fold_splits_by_embryo = kfold_split(embryos, n_splits=KFOLDS, random_state=RANDOM_STATE, val_size=VAL_SIZE, test_size=TEST_SIZE)
             for train_embryos, val_embryos, test_embryos in k_fold_splits_by_embryo:
-                
                 # TODO: this is hacked for the n_splits = 1 case
                 logger.info(f"Train: {len(train_embryos)} | Val: {len(val_embryos)} | Test: {len(test_embryos)}")
                 write_data_split( train_embryos, val_embryos, test_embryos, model_dir)
