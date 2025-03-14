@@ -290,7 +290,8 @@ class CustomImageDataset(Dataset):
         
         if self.multi_modal and self.multi_modal_map is not None:
             fname = recover_original_filename(img_path)
-            assert(fname in self.multi_modal_map)
+            if fname not in self.multi_modal_map:
+                raise ValueError(f"File {fname} not found in multi_modal_map.")
             additional_val = self.multi_modal_map[fname]
             return image, additional_val, label
         else:
